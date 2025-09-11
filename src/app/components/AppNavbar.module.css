@@ -1,0 +1,371 @@
+.navbarCustom {
+  padding: 0;
+  min-height: 59px;
+  height: 59px;
+  display: flex;
+  align-items: center;
+  background: var(--nav-bg);
+  color: var(--nav-fg);
+  transition: background .25s ease, color .25s ease;
+  font-weight: 600;
+  position: relative;
+  z-index: 1030; /* Higher than most content */
+}
+
+.navbarContainer {
+  padding: 0 1rem;
+}
+
+/* Force Bootstrap nav links & brand to inherit our theme colors */
+.navbarCustom :global(.nav-link),
+.navbarCustom :global(.navbar-brand),
+.navbarCustom :global(.dropdown-item) {
+  color: inherit;
+}
+
+/* Optional subtle brand hover (kept separate, no effect on active links) */
+.navbarCustom :global(.navbar-brand:hover) {
+  opacity: 0.85;
+}
+
+/* Explicit dark mode override for solid black navbar */
+/* Dropdown inherits */
+.navbarCustom :global(.dropdown-menu) {
+  background: var(--nav-bg);
+  color: var(--nav-fg);
+  border: 1px solid var(--panel-border);
+  z-index: 1031; /* Higher than navbar */
+}
+
+.navbarCustom :global(.dropdown-item:hover) {
+  background: var(--panel-border);
+  color: var(--nav-fg);
+  opacity: 0.85; /* subtle dim without conflict */
+}
+
+/* Dropdown item custom pill styling */
+.dropdownItem {
+  padding: 0.45rem 1rem;
+  border-radius: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+  transition: background .18s ease, color .18s ease;
+  color: var(--nav-fg);
+}
+
+.dropdownItem:hover:not(.dropdownItemActive) {
+  background: rgba(255,255,255,0.08);
+}
+html.light-mode .dropdownItem:hover:not(.dropdownItemActive) {
+  background: rgba(0,0,0,0.06);
+}
+
+.dropdownItemActive {
+  background: #D4DD6A;
+  color: #fff;
+  font-weight: 600;
+}
+
+.dropdownItemActive:hover {
+  background: #D4DD6A; /* keep stable */
+  color: #fff;
+}
+
+.navbarFlex {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  justify-content: space-between;
+  position: relative;
+}
+
+.brandWrapper {
+  flex: 0 0 auto;
+  min-width: 0; /* Prevent flex item from growing */
+}
+
+.navbarBrand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0; /* Prevent text overflow issues */
+  flex-shrink: 0; /* Prevent brand from shrinking */
+}
+
+.flagContainer {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+}
+
+.flagImage {
+  height: 40px;
+  width: 70px;
+  margin-left: -2px;
+}
+
+.logoContainer {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.logoImage {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: invert(34%) sepia(98%) saturate(7476%) hue-rotate(210deg) brightness(98%) contrast(101%);
+}
+
+.brandText {
+  font-weight: 900;
+  font-size: 20px;
+  color: var(--brand-color, #5FA4FA);
+  letter-spacing: 0.7px;
+  -webkit-text-stroke: 0.2px currentColor;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+html.dark-mode .brandText {
+  --brand-color: #5FA4FA;
+}
+
+.navbarCollapse {
+  flex-grow: 0;
+  z-index: 1032; /* Highest priority for dropdowns */
+}
+
+.navbarNav {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  flex-wrap: nowrap;
+}
+
+/* Base nav link styling */
+.navLinkBase {
+  padding: 0.48rem 0.75rem;
+  border-radius: 18px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  line-height: 1;
+  position: relative;
+  transition: background .18s ease, color .18s ease, opacity .18s ease;
+  white-space: nowrap;
+}
+
+/* Non-active link hover styles */
+html.dark-mode .navLinkBase:not(.activeNav):hover {
+  background: rgba(255,255,255,0.08);
+}
+html.light-mode .navLinkBase:not(.activeNav):hover {
+  background: rgba(0,0,0,0.05);
+}
+
+/* Active item: rectangular with subtle rounding (no pill) */
+.activeNav {
+  background: #D4DD6A; /* light yellow/green */
+  color: #ffffff; /* white text */
+  font-weight: 600;
+  padding: 0.8rem 0.9rem; /* tighter, non-pill spacing */
+  border-radius: 8px; /* subtle rounding */
+}
+
+/* Keep active appearance stable on hover */
+.activeNav:hover {
+  background: #D4DD6A;
+  opacity: 1;
+}
+
+/* In dark mode, force active nav link text to white with minimal overlap */
+html.dark-mode .navbarCustom :global(.nav-link.active),
+html.dark-mode .navbarCustom .activeNav {
+  color: #ffffff !important;
+}
+
+html.dark-mode .navLinkBase:not(.activeNav):hover {
+  background: rgba(255,255,255,0.08);
+}
+
+html.light-mode .navLinkBase:hover:not(.activeNav) {
+  background: rgba(0,0,0,0.05);
+}
+
+/* Ensure dropdown toggle inherits base sizing */
+.loginDropdown {
+  padding: 0.1rem 0.1rem;
+  border-radius: 12px;
+}
+
+/* Keep dropdown toggle visually neutral (no black background when opened) */
+.navbarCustom :global(.dropdown-toggle),
+.navbarCustom :global(.dropdown-toggle:focus),
+.navbarCustom :global(.show > .dropdown-toggle) {
+  background: transparent !important;
+  color: inherit !important;
+  box-shadow: none !important;
+}
+
+/* Also neutralize any active state class Bootstrap might add */
+.navbarCustom :global(.dropdown-toggle.nav-link.active),
+.navbarCustom :global(.dropdown-toggle.nav-link:active),
+.navbarCustom :global(.dropdown-toggle.nav-link:hover) {
+  background: transparent !important;
+  color: inherit !important;
+}
+
+/* Login modal input styling: keep scoped to the component via CSS Modules */
+.loginModalInput {
+  border: 1px solid var(--panel-border);
+}
+
+/* Dark mode: specific placeholder and border color */
+html.dark-mode .loginModalInput::placeholder {
+  color: #6A717D;
+  opacity: 1;
+}
+html.dark-mode .loginModalInput {
+  border-color: #6A717D;
+}
+
+/* Mobile responsive styles */
+.navbarToggle {
+  border: none;
+  background: transparent !important;
+  color: inherit;
+  padding: 0.5rem;
+  margin-left: 0.5rem;
+}
+
+.navbarToggle:focus {
+  box-shadow: none !important;
+}
+
+.logoutButtonContainer {
+  display: flex;
+  align-items: center;
+}
+
+.logoutButton {
+  height: 35px;
+  width: 80px;
+  font-weight: 600;
+}
+
+.themeToggleWrap {
+  display: flex;
+  align-items: center;
+  margin-left: 4px;
+}
+
+.themeToggleButton {
+  background: transparent;
+  border: none;
+  color: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  cursor: pointer;
+}
+
+.themeIcon {
+  display: inline-flex;
+  align-items: center;
+  padding-left: 2px;
+}
+
+/* Mobile menu styling */
+@media (max-width: 991.98px) {
+  .navbarNav {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 1rem 0;
+    width: 100%;
+  }
+  
+  .navLinkBase {
+    width: 100%;
+    padding: 0.75rem 1rem;
+  }
+  
+  .themeToggleWrap {
+    margin: 0.5rem 0;
+    padding: 0 1rem;
+    width: 100%;
+  }
+  
+  .logoutButtonContainer {
+    width: 100%;
+    padding: 0 1rem;
+  }
+  
+  .logoutButton {
+    width: 100%;
+  }
+  
+  .navbarCustom :global(.dropdown-menu) {
+    position: static;
+    float: none;
+    width: 100%;
+    margin-top: 0;
+    background-color: transparent;
+    border: none;
+    box-shadow: none;
+  }
+  
+  .loginDropdown {
+    width: 100%;
+  }
+  
+  .navbarCustom :global(.dropdown-toggle) {
+    width: 100%;
+    text-align: left;
+    padding: 0.75rem 1rem;
+  }
+  
+  .dropdownItem {
+    padding: 0.5rem 1rem 0.5rem 2rem;
+    width: 100%;
+  }
+  
+  .navbarCollapse {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--nav-bg);
+    border-top: 1px solid var(--panel-border);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+}
+
+@media (min-width: 992px) {
+  .navbarCollapse {
+    display: flex !important;
+    flex-basis: auto;
+  }
+  
+  .navbarNav {
+    flex-direction: row;
+  }
+}
+
+/* Prevent content shift when navbar expands */
+.navbarCustom :global(.navbar-collapse.collapsing),
+.navbarCustom :global(.navbar-collapse.show) {
+  transition: none;
+}

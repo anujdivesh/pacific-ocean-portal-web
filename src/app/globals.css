@@ -1,0 +1,160 @@
+/* Base (light) theme variables */
+html, :root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --nav-bg: #ffffff;
+  --nav-fg: #171717;
+  --panel-border: rgba(0,0,0,0.12);
+}
+
+/* Explicit light-mode class (used to override OS dark preference) */
+html.light-mode {
+  --background: #ffffff;
+  --foreground: #171717;
+  --nav-bg: #ffffff;
+  --nav-fg: #171717;
+  --panel-border: rgba(0,0,0,0.12);
+  color-scheme: light;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Dark mode explicit */
+html.dark-mode {
+  --background: #3F4854; /* updated dark background */
+  --foreground: #ffffff; /* keep contrast high */
+  --nav-bg: #3F4854; /* navbar matches background */
+  --nav-fg: #ffffff;
+  --panel-border: #2c333c; /* derived darker border */
+  color-scheme: dark;
+}
+html.dark-mode, html.dark-mode body,
+html.light-mode, html.light-mode body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Respect OS preference ONLY when user has not explicitly chosen (no dark-mode or light-mode class present) */
+@media (prefers-color-scheme: dark) {
+  html:not(.dark-mode):not(.light-mode) {
+    --background: #3F4854;
+    --foreground: #ffffff;
+    --nav-bg: #3F4854;
+    --nav-fg: #ffffff;
+    --panel-border: #2c333c;
+    color-scheme: dark;
+  }
+}
+
+/* react-datepicker visibility overrides */
+.react-datepicker-popper,
+.react-datepicker,
+.react-datepicker__portal {
+  z-index: 4000 !important; /* above sidebar (20) and map controls */
+}
+
+/* Ensure portal body appended popper not clipped */
+body > .react-datepicker-popper { position: absolute; }
+
+/* Optional: smooth font & small shadow */
+.react-datepicker { box-shadow: 0 6px 18px -4px rgba(0,0,0,0.35), 0 2px 6px rgba(0,0,0,0.25); }
+
+/* Dark mode calendar icon (react-datepicker showIcon) */
+/* Calendar icon vertically centered (default size) */
+.react-datepicker__input-container .react-datepicker__calendar-icon {
+  top: 50% !important;
+  transform: translateY(-50%);
+  transform-origin: center;
+}
+html.dark-mode .react-datepicker__input-container .react-datepicker__calendar-icon {
+  filter: invert(1) brightness(1.6) contrast(1.1);
+  opacity: 0.95;
+}
+html.dark-mode .react-datepicker__input-container .react-datepicker__calendar-icon:hover { opacity: 1; }
+
+/* Extra right padding so text doesn't crowd larger calendar icon */
+.react-datepicker__input-container input.date-picker-dark,
+.react-datepicker__input-container input.form-control.date-picker-dark,
+.react-datepicker__input-container input.customInput.date-picker-dark,
+html.dark-mode .react-datepicker__input-container input.date-picker-dark,
+html.light-mode .react-datepicker__input-container input.date-picker-dark {
+  padding-left: 34px !important; /* space for icon + gap */
+  padding-right: 38px !important; /* keep any right-side spacing if needed */
+}
+
+/* Input field dark styling via custom class */
+.date-picker-dark,
+html.dark-mode input.form-control.date-picker-dark,
+html.dark-mode .date-picker-dark.customInput {
+  background: #3F4854 !important;
+  border: 1px solid #6E767D !important;
+  color: #e6e9ed !important;
+}
+html.dark-mode .date-picker-dark::placeholder { color: #98a2ad !important; }
+html.dark-mode .date-picker-dark:focus { outline: 2px solid #4d8ac9; box-shadow: none; }
+
+/* Placeholder color for dark mode */
+html.dark-mode ::-webkit-input-placeholder {
+  color: #9ca3af !important;
+}
+
+html.dark-mode :-moz-placeholder {
+  color: #9ca3af !important;
+}
+
+html.dark-mode ::-moz-placeholder {
+  color: #9ca3af !important;
+}
+
+html.dark-mode :-ms-input-placeholder {
+  color: #9ca3af !important;
+}
+
+html.dark-mode input::placeholder {
+  color: #9ca3af !important;
+}
+
+/* Specific styling for Collections component */
+.collections-container input::placeholder {
+  color: #9ca3af !important;
+}
+
+.collections-container .form-control::placeholder {
+  color: #9ca3af !important;
+}
+/* Force calendar popup to use light theme even in dark mode (exact light look) */
+/* Removed dark-mode calendar popup overrides so dropdown stays identical to light mode */
+
+
+/* Global CSS or in your light mode class */
+.light-mode {
+  --collapse-btn-bg: rgba(255, 255, 255, 0.7);
+  --collapse-btn-border: rgba(108, 117, 125, 0.9);
+  --collapse-btn-bg-hover: #6c757d;
+  --collapse-btn-border-hover: #6c757d;
+  --collapse-inner-bg: rgba(108, 117, 125, 0.7);
+  --collapse-inner-bg-hover: #6c757d;
+}

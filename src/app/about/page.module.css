@@ -1,0 +1,44 @@
+.aboutDark {
+  background: #2E2E32 !important;
+  color: #fff !important;
+}
+.aboutLight {
+  background: #fff !important;
+  color: #171717 !important;
+}
+
+.aboutLight .aboutCard {
+  background: #fff !important;
+  border: 1px solid #e5e7eb !important;
+  color: #171717 !important;
+}
+.aboutCard {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  color: #171717;
+  transition: background 0.2s, color 0.2s, border 0.2s;
+}
+
+
+
+html.dark-mode .aboutCard {
+  background: #3F4853 !important;
+  border: 1px solid #2c333c !important;
+  color: #fff !important;
+}
+html.light-mode .aboutCard {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  color: #171717;
+}
+.fullPage {
+  min-height: calc(100vh - 60px);
+  height: calc(100vh - 60px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--background);
+  color: var(--foreground);
+  transition: background .25s ease, color .25s ease;
+}
