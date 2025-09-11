@@ -846,6 +846,7 @@ const MapBox = () => {
                        const sizex = null;
                        const sizey = null;
                        const bbox = null;
+                      // console.log({ id, x, y, sizex, sizey, bbox, station })
                        // const isDataAvailable = await checkDataAvailability('TIDE', station, id);
                        // if (isDataAvailable) {
                             dispatch(setCoordinates({ id, x, y, sizex, sizey, bbox, station }));

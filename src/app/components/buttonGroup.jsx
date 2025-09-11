@@ -84,10 +84,21 @@ function ButtonGroupComp({ item }) {
           IDEAL ZOOM
         </Button>
 
+         <Button 
+          variant="warning" 
+          style={{ borderRadius: 0, fontSize: '12px',color:'white' }}
+          onClick={() => {
+        dispatch(setAccordion(item.id));
+        dispatch(showModaler());
+      }}
+        >
+          METADATA
+        </Button>
+
       
 
 
-
+{/*
         <Dropdown style={{ borderRadius: 0 }}>
   <Dropdown.Toggle 
     className="custom-dropdown-button no-caret" 
@@ -126,7 +137,7 @@ function ButtonGroupComp({ item }) {
       <FaRegTrashCan size={15} style={{marginTop:-2}} />&nbsp;Remove Layer
     </Dropdown.Item>
   </Dropdown.Menu>
-</Dropdown>
+</Dropdown>*/}
       </ButtonGroup>
     </Row>
   );

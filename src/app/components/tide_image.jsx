@@ -3,18 +3,20 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Spinner } from 'react-bootstrap';
 import { useAppSelector } from '@/app/GlobalRedux/hooks';
 
-function TideImageComponent({ height }) {
-  const { station, x,y } = useAppSelector((state) => state.coordinate.coordinates);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState('');
+function TideImageComponent({ height, data }) {
+  // Accept data prop, fallback to Redux if not provided
+  const reduxCoords = useAppSelector((state) => state.coordinate.coordinates);
   const mapLayer = useAppSelector((state) => state.mapbox.layers);
   const lastlayer = useRef(0);
+  const coords = data || reduxCoords;
+  const { station, x, y } = coords || {};
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  // Reset loading and error states when station changes
   useEffect(() => {
     setIsLoading(true);
     setError('');
-  }, [station]);
+  }, [station, x, y]);
 
   const handleImageLoad = () => {
     setIsLoading(false);
@@ -43,16 +45,16 @@ function TideImageComponent({ height }) {
   }
 
   return (
-    <div style={{ 
-      display: 'flex', 
-      flexDirection: 'column', 
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
       height: `${height}px`,
       position: 'relative',
       overflow: 'hidden'
     }}>
       {/* Loading Spinner */}
       {isLoading && (
-        <div style={{ 
+        <div style={{
           position: 'absolute',
           top: '50%',
           left: '50%',
@@ -61,7 +63,7 @@ function TideImageComponent({ height }) {
           display: 'flex',
           alignItems: 'center',
         }}>
-          <Spinner animation="border" role="status" variant="primary"/>
+          <Spinner animation="border" role="status" variant="primary" />
           <span style={{ marginLeft: '10px', fontSize: '18px' }}>Fetching data from API...</span>
         </div>
       )}
@@ -82,7 +84,7 @@ function TideImageComponent({ height }) {
       )}
 
       {/* Image Element */}
-      <img 
+      <img
         src={`https://ocean-plotter.spc.int/plotter/tide_hindcast?country=${x}&location=${y}&station_id=${station}`}
         alt="Tide Chart"
         style={{

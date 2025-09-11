@@ -306,7 +306,7 @@ function BottomOffCanvas({ isVisible, id }) {
         return (
           <Tabs activeKey={selectedTab} onSelect={handleTabSelect} id="offcanvas-tabs" className="mb-3 custom-bottom-tabs">
             <Tab eventKey="tab4" title="Tide Chart">
-              <TideImageComponent height={height - 100} data={data} /> 
+              <TideImageComponent height={height - 100} data={currentCoordinates} /> 
             </Tab>
           </Tabs>
         );
