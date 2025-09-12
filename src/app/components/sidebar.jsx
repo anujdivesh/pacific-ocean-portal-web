@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
 import styles from '../explorer/page.module.css';
+import './sidebar_mobile.css';
 import { Row, Col, Button } from 'react-bootstrap';
 import dynamic from 'next/dynamic';
 import { useAppSelector, useAppDispatch } from '@/app/GlobalRedux/hooks';
@@ -29,6 +30,11 @@ const SideBar = ({ collapsed = false, onToggle = () => {}, onOpenMapData }) => {
 
   const [regions, setRegions] = useState([]);
   const [selectedRegion, setSelectedRegion] = useState('1');
+  const [isMobileDrawerExpanded, setIsMobileDrawerExpanded] = useState(false);
+  
+  // Touch/swipe handling for mobile drawer
+  const [touchStart, setTouchStart] = useState(null);
+  const [touchEnd, setTouchEnd] = useState(null);
 
   const handleShowCanvas = () => { dispatch(showsideoffCanvas()); };
   const handleShow = () => {
@@ -38,6 +44,39 @@ const SideBar = ({ collapsed = false, onToggle = () => {}, onOpenMapData }) => {
     dispatch(hideoffCanvas());
   };
   const handleClose = () => { dispatch(hideModal()); };
+  
+  // Mobile drawer toggle function
+  const toggleMobileDrawer = () => {
+    setIsMobileDrawerExpanded(!isMobileDrawerExpanded);
+  };
+
+  // Swipe handling functions
+  const minSwipeDistance = 50; // Minimum distance for a swipe
+
+  const onTouchStart = (e) => {
+    setTouchEnd(null); // Reset touchEnd
+    setTouchStart(e.targetTouches[0].clientY);
+  };
+
+  const onTouchMove = (e) => {
+    setTouchEnd(e.targetTouches[0].clientY);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    
+    const distance = touchStart - touchEnd;
+    const isUpSwipe = distance > minSwipeDistance;
+    const isDownSwipe = distance < -minSwipeDistance;
+
+    if (isUpSwipe && !isMobileDrawerExpanded) {
+      // Swipe up to expand
+      setIsMobileDrawerExpanded(true);
+    } else if (isDownSwipe && isMobileDrawerExpanded) {
+      // Swipe down to collapse
+      setIsMobileDrawerExpanded(false);
+    }
+  };
 
   useEffect(() => {
     setSelectedRegion(country_idx);
@@ -111,7 +150,9 @@ const SideBar = ({ collapsed = false, onToggle = () => {}, onOpenMapData }) => {
   const width = collapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH;
   return (
     <div
-      className={`sidebar-responsive-wrapper ${collapsed ? styles.sidebarCollapsed : styles.sidebar}`}
+      className={`sidebar-responsive-wrapper ${collapsed ? styles.sidebarCollapsed : styles.sidebar} ${isMobileDrawerExpanded ? 'expanded' : ''}`}
+      data-expanded={isMobileDrawerExpanded}
+      data-text={isMobileDrawerExpanded ? 'Tap to collapse tools' : 'Tap to expand tools'}
       style={{
         marginRight: '3px',
         marginLeft: '3px',
@@ -126,6 +167,25 @@ const SideBar = ({ collapsed = false, onToggle = () => {}, onOpenMapData }) => {
         transition: 'width .25s cubic-bezier(.4,0,.2,1)'
       }}
     >
+      {/* Mobile handle area - clickable and swipeable */}
+      <div 
+        className="mobile-handle-area"
+        onClick={toggleMobileDrawer}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: '60px',
+          zIndex: 5,
+          cursor: 'pointer',
+          touchAction: 'pan-y' // Allow vertical touch gestures
+        }}
+      />
+      
       {/* Collapse / expand toggle styled via CSS module */}
       <button
         type="button"

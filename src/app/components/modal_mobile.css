@@ -1,0 +1,13 @@
+/* Mobile styles for Modal component */
+@media (max-width: 768px) {
+  .custom-modal.explore-modal .modal-body .col-md-4,
+  .custom-modal.explore-modal .modal-body .col-md-8 {
+    max-height: 20vh !important;
+    overflow-y: auto !important;
+  }
+  
+  .custom-modal.explore-modal .modal-body .col-md-8 {
+    border-right: none !important;
+    border-top: 1px solid #e5e7eb !important;
+  }
+}

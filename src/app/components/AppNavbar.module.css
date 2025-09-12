@@ -128,7 +128,7 @@ html.light-mode .dropdownItem:hover:not(.dropdownItemActive) {
 .brandText {
   font-weight: 900;
   font-size: 20px;
-  color: var(--brand-color, #5FA4FA);
+  color: var(--brand-color, #0065f8);
   letter-spacing: 0.7px;
   -webkit-text-stroke: 0.2px currentColor;
   white-space: nowrap;
@@ -137,10 +137,10 @@ html.light-mode .dropdownItem:hover:not(.dropdownItemActive) {
   max-width: 100%;
 }
 
-html.dark-mode .brandText {
-  --brand-color: #5FA4FA;
-}
-
+/* Brand text colors are now handled directly in JSX */
+/* .AppNavbar_brandText__pNdDz{
+  color: #0065f8!important;
+} */
 .navbarCollapse {
   flex-grow: 0;
   z-index: 1032; /* Highest priority for dropdowns */
