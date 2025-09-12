@@ -35,6 +35,13 @@ const SideBar = ({ collapsed = false, onToggle = () => {}, onOpenMapData }) => {
   // Touch/swipe handling for mobile drawer
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
+  // Simple mobile detection (fix hydration error)
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.matchMedia) {
+      setIsMobile(window.matchMedia('(max-width: 768px)').matches);
+    }
+  }, []);
 
   const handleShowCanvas = () => { dispatch(showsideoffCanvas()); };
   const handleShow = () => {
@@ -167,24 +174,26 @@ const SideBar = ({ collapsed = false, onToggle = () => {}, onOpenMapData }) => {
         transition: 'width .25s cubic-bezier(.4,0,.2,1)'
       }}
     >
-      {/* Mobile handle area - clickable and swipeable */}
-      <div 
-        className="mobile-handle-area"
-        onClick={toggleMobileDrawer}
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: '60px',
-          zIndex: 5,
-          cursor: 'pointer',
-          touchAction: 'pan-y' // Allow vertical touch gestures
-        }}
-      />
+      {/* Mobile handle area - clickable and swipeable (only render on mobile) */}
+      {isMobile && (
+        <div 
+          className="mobile-handle-area"
+          onClick={toggleMobileDrawer}
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: '60px',
+            zIndex: 5,
+            cursor: 'pointer',
+            touchAction: 'pan-y' // Allow vertical touch gestures
+          }}
+        />
+      )}
       
       {/* Collapse / expand toggle styled via CSS module */}
       <button
