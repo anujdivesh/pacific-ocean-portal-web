@@ -8,6 +8,7 @@ import { useAppSelector } from "@/app/GlobalRedux/hooks";
 import { FaRegCircle, FaDotCircle } from 'react-icons/fa';
 //import '@/components/css/modal.css'; // Import your CSS file
 import { CgSearch } from 'react-icons/cg';
+import './modal_mobile.css';
 
 const ExploreModal = ({ show, onClose, title, bodyContent }) => {
   const [theme, setTheme] = useState([]);
@@ -328,7 +329,7 @@ const ExploreModal = ({ show, onClose, title, bodyContent }) => {
                 <MyAccordion className="scrollable-content modal-accordion" dataset={data} searchQuery={searchQuery} />
               )}
             </Col>
-            <Col md={8} className="scrollable-column" style={{ background: '#ffffff', padding: 0 }}>
+            <Col  md={8} className="scrollable-column" style={{ background: '#ffffff', padding: 0 }}>
               <AccordionMetadata />
             </Col>
           </Row>

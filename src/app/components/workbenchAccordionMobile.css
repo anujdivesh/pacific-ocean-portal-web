@@ -1,0 +1,9 @@
+/* Mobile styles for workbench accordion */
+@media (max-width: 1004px) {
+  #workbenchHints{
+   
+    position: absolute;
+    top: 46px;
+}
+
+}

@@ -5,6 +5,7 @@ import Accordion from 'react-bootstrap/Accordion';
 import { useAppSelector, useAppDispatch } from '@/app/GlobalRedux/hooks';
 // Themed accordion styles
 import './workbenchAccordion.css';
+import './workbenchAccordionMobile.css';
 import ButtonGroupComp from './buttonGroup';
 import BottomOffCanvas from './bottom_offcanvas';
 import ColorScale from './color_scale';
@@ -247,7 +248,7 @@ const MyWorkbench = () => {
             </div>
           </div>
           
-          <div style={{ textAlign: 'left' }}>
+          <div id="workbenchHints" style={{ textAlign: 'left' }}>
             <h5 className="workbench-hints-title" style={{ 
               marginBottom: '15px', 
               marginTop: 0, 

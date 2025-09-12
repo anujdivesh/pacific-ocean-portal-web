@@ -7,6 +7,7 @@ import { useAppSelector } from '@/app/GlobalRedux/hooks';
 import Lottie from "lottie-react";
 import animationData from "./lottie/live.json";
 import { get_url } from './urls';
+import './timeseries_sofar_mobile.css';
 
 //const Line = lazy(() => import('react-chartjs-2').then((mod) => ({ default: mod.Line })));
 
@@ -687,7 +688,7 @@ useEffect(() => {
       background: 'transparent',
       color: mainTextColor
     }} key={themeVersion}>
-      <div style={{ 
+      <div id="timeseries-top-container"  style={{ 
         height: '35px',
         display: 'flex', 
         alignItems: 'center',

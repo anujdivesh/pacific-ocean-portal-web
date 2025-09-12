@@ -1,0 +1,180 @@
+@media (max-width: 1004px) {
+   
+
+.page_collapseBtn__j99XM{
+    display: none;
+}
+  /* Transform sidebar into bottom drawer */
+ .sidebar-responsive-wrapper {
+    position: fixed !important;
+    bottom: 0px !important;
+    width: 100vw !important;
+    right: 0px !important;
+    left: 0px !important;
+    height: auto !important;
+    max-height: 50vh !important;
+    z-index: 1040 !important;
+    background: var(--background) !important;
+    border-top: 2px solid var(--panel-border) !important;    
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important; /* Disable scroll when collapsed */
+    transform: translateY(calc(100% - 60px)) !important; /* Show the handle and text by default */
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  /* When expanded, show the full drawer */
+  .sidebar-responsive-wrapper.expanded {
+    transform: translateY(0) !important;
+    overflow-y: auto !important; /* Enable scroll only when expanded */
+  }
+
+  /* Hide workbench content when collapsed with smooth transition */
+  .sidebar-responsive-wrapper:not(.expanded) .workbench-accordion,
+  .sidebar-responsive-wrapper:not(.expanded) .sidebar-buttons,
+  .sidebar-responsive-wrapper:not(.expanded) .region-select,
+  .sidebar-responsive-wrapper:not(.expanded) .workbench-row,
+  .sidebar-responsive-wrapper:not(.expanded) .sidebar-row {
+    opacity: 0 !important;
+    transform: translateY(20px) !important;
+    transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out !important;
+    pointer-events: none !important;
+  }
+
+  /* Show workbench content when expanded with smooth transition */
+  .sidebar-responsive-wrapper.expanded .workbench-accordion,
+  .sidebar-responsive-wrapper.expanded .sidebar-buttons,
+  .sidebar-responsive-wrapper.expanded .region-select,
+  .sidebar-responsive-wrapper.expanded .workbench-row,
+  .sidebar-responsive-wrapper.expanded .sidebar-row {
+    opacity: 1 !important;
+    transform: translateY(0) !important;
+    transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out !important;
+    pointer-events: auto !important;  
+    z-index: 4 !important; 
+    position: relative !important;
+  }
+  
+ 
+   .region-select,
+ 
+  .sidebar-row {
+    margin-top: 25px !important;
+  }
+ 
+ 
+
+  /* .workbench-hints-title{
+    margin-top: 100px !important;
+  } */
+
+  /* Add pull down/up handle in the center */
+  .sidebar-responsive-wrapper::before {
+    content: '';
+    position: sticky;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 40px;
+    background: var(--background);
+    border-bottom: 1px solid var(--panel-border);
+    cursor: pointer;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Create the handle with two horizontal lines */
+  .sidebar-responsive-wrapper::after {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 50px;
+    height: 12px;
+    z-index: 2;
+    pointer-events: none;
+    transition: transform 0.3s ease;
+    border: 2px solid #ff6b35; /* Orange border */
+    border-radius: 10px;
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+
+  /* Create the two horizontal lines inside the handle */
+  .sidebar-responsive-wrapper::after {
+    background: 
+      linear-gradient(to right, transparent 0%, transparent 15%, #666 15%, #666 85%, transparent 85%, transparent 100%),
+      linear-gradient(to right, transparent 0%, transparent 15%, #666 15%, #666 85%, transparent 85%, transparent 100%);
+    background-size: 100% 2px, 100% 2px;
+    background-position: 0 3px, 0 7px;
+    background-repeat: no-repeat;
+  }
+
+  /* Rotate arrow when expanded */
+  .sidebar-responsive-wrapper.expanded::after {
+    transform: translateX(-50%) rotate(180deg);
+  }
+
+  /* Make the handle clickable and add hover effect */
+  .sidebar-responsive-wrapper::before {
+    cursor: pointer;
+  }
+
+  .sidebar-responsive-wrapper::before:hover {
+    background: var(--panel-border);
+  }
+
+  /* Hover effect for the handle */
+  .sidebar-responsive-wrapper:hover::after {
+    border-color: #ff8c42; /* Lighter orange on hover */
+    background-color: rgba(255, 255, 255, 0.2);
+    transform: translateX(-50%) scale(1.05);
+  }
+
+  /* Active state for the handle */
+  .sidebar-responsive-wrapper:active::after {
+    transform: translateX(-50%) scale(0.95);
+  }
+
+  /* Add text indicator below the handle */
+  .sidebar-responsive-wrapper {
+    position: relative;
+  }
+
+  /* Add "Tap to expand tools" text using a data attribute */
+  .sidebar-responsive-wrapper[data-expanded="false"]::before {
+    content: 'Tap to expand tools';
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #999 !important;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none !important;
+    border-bottom: none !important;
+    white-space: nowrap;
+    z-index: 3;
+  }
+
+  .sidebar-responsive-wrapper[data-expanded="true"]::before {
+    content: 'Tap to collapse tools';
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #999 !important;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none !important;
+    border-bottom: none !important;
+    white-space: nowrap;
+    z-index: 3;
+  }
+
+  }

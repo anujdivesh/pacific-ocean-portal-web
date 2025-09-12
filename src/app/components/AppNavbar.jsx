@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Navbar, Nav, NavDropdown, Container, Modal, Button, Form } from "react-bootstrap";
 import { usePathname } from "next/navigation";
 import styles from "./AppNavbar.module.css";
+// import "./navbar_mobile.css";
 import { useState, useEffect, useActionState } from "react";
 import { FaToggleOn, FaToggleOff, FaSun, FaMoon, FaBars } from "react-icons/fa";
 import { login, logout as logoutServer } from "@/app/login/action";
@@ -57,6 +58,8 @@ export default function AppNavbar({ logoutButtonSize = 'sm' }) {
     const stored = localStorage.getItem('theme');
     if (stored === 'dark') { setDark(true); return; }
     if (stored === 'light') { setDark(false); return; }
+    // Default to dark mode if no theme preference is stored
+    setDark(true);
     // Fallback: detect if class already present (e.g. from prior hot reload)
     if (document.documentElement.classList.contains('dark-mode') || document.body.classList.contains('dark-mode')) {
       setDark(true);
@@ -196,7 +199,12 @@ export default function AppNavbar({ logoutButtonSize = 'sm' }) {
                     className={styles.logoImage}
                   />
                 </span>
-                <span className={styles.brandText}>
+                <span 
+                  className={styles.brandText}
+                  style={{
+                    color: dark ? '#5FA4FA' : '#0065f8'
+                  }}
+                >
                   Pacific Ocean Portal
                 </span>
               </Navbar.Brand>
