@@ -75,20 +75,21 @@ const ExploreModal = ({ show, onClose, title, bodyContent }) => {
   };
 
   // Fetch theme data when the modal loads
-  useEffect(() => {
-    const fetchThemes = async () => {
-      try {
-        const response = await fetch(get_url('theme'));
-        const data = await response.json();
-        setTheme(data);
-      } catch (error) {
-        console.error('Error fetching themes:', error);
-      }
-    };
+useEffect(() => {
+  const fetchThemes = async () => {
+    try {
+      const response = await fetch(get_url('theme'));
+      const data = await response.json();
+      // Filter themes where enabled is true
+      const enabledThemes = data.filter(theme => theme.enabled === true);
+      setTheme(enabledThemes);
+    } catch (error) {
+      console.error('Error fetching themes:', error);
+    }
+  };
 
-    fetchThemes();
-  }, []);
-
+  fetchThemes();
+}, []);
   // When the userId is updated, show the first theme (Data Catalogue) by default
   useEffect(() => {
     if (userId && theme.length > 0) {

@@ -1252,8 +1252,8 @@ const MapBox = () => {
           var div = L.DomUtil.create("div", "legend");
           div.innerHTML += "<img src='/north_arrow.png' alt='North Arrow' width='50px' height='60px'>";
           div.style.backgroundColor = "transparent";
-          div.style.marginLeft = '10px';
-          div.style.marginBottom = '10px'; // Reduced margin to move closer to bottom
+          div.style.marginLeft = '0px';
+          div.style.marginBottom = '0px'; // Reduced margin to move closer to bottom
           div.style.zIndex = '999';
           div.style.position = 'absolute';
           div.style.bottom = '10px';

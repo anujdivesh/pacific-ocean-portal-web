@@ -1,3 +1,4 @@
+
 "use server";
 
 import { z } from "zod";
@@ -76,10 +77,14 @@ export async function login(prevState: PrevState, formData: FormData) {
     const accountData = await accountResponse.json();
     let country_idx = "";
 
+
     if (Array.isArray(accountData) && accountData.length > 0) {
-      // Find the account object that matches the username
-      const userObj = accountData.find((acc:any) => acc.user.email === username);
-    
+      // Define a type for account objects
+      interface Account {
+        user: { email: string };
+        country: { id: string };
+      }
+      const userObj = (accountData as Account[]).find((acc) => acc.user.email === username);
       if (userObj) {
         country_idx = userObj.country.id;
       }

@@ -1,0 +1,16 @@
+#version: '3.8'
+
+services:
+  pacific-ocean-portal:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - SESSION_SECRET=OCEANS_PACIFIC_COMMUNITY
+      - NEXT_PUBLIC_BASE_URL=https://oceanportal2.spc.int
+    restart: unless-stopped
