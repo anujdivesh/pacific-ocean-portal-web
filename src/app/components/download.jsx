@@ -113,40 +113,16 @@ function Download({ height }) {
       </div>
       <div style={{ display: 'flex', marginTop: '20px' }}>
         <img
-          src="/python.jpg"
+          src="/data_logos.png"
           alt="Logo 1"
           style={{
             marginTop: '-10px',
-            width: '120px',
+            width: '450px',
             height: '55px',
-            marginRight: '10px'
+            marginRight: '10px', borderRadius:10
           }}
         />
-        <img
-          src="/xarray.png"
-          alt="Logo 2"
-          style={{
-            width: '120px',
-            height: '30px',
-          }}
-        />
-        <img
-          src="/unidata.png"
-          alt="Logo 3"
-          style={{
-            width: '120px',
-            height: '30px',
-          }}
-        />
-        <img
-          src="/opendap.png"
-          alt="Logo 6"
-          style={{
-            marginTop: -17,
-            width: '155px',
-            height: '60px',
-          }}
-        />
+       
       </div>
     </>
   );

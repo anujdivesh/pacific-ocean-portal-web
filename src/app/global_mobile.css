@@ -6,4 +6,7 @@
     .map-controls{
         display: none!important;
     }
+    .map-controls-container {
+    display: none !important;
+  }
   }
