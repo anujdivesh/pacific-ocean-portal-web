@@ -1511,6 +1511,7 @@ const MapBox = () => {
         const layerGroup = L.layerGroup();
        //   console.log('Map useEffect triggered with layers:', layers);
     layers.forEach(layer => {
+     // setIsLoading(true); 
     /*  console.log("Processing layer:", {
         id: layer.layer_information.id,
         title: layer.layer_information.layer_title,
@@ -1542,7 +1543,7 @@ const MapBox = () => {
             
           }
          // console.log(layer.layer_information.timeIntervalStart,layer.layer_information.timeIntervalEnd, dateToDisplay)
-         setIsLoading(true); 
+       // setIsLoading(true); 
       if(!layer.layer_information.is_timeseries){
         if (layer.layer_information.is_composite) {
           var layername = layer.layer_information.layer_name.split(',');
@@ -1567,7 +1568,7 @@ const MapBox = () => {
           wmsLayer._datasetId = layer.layer_information.id;
           addLayerWithLoading(layerGroup, wmsLayer, setIsLoading);
           //layerGroup.addLayer(wmsLayer);
-  
+           setIsLoading(true);
           const wmsLayer2 = addWMSTileLayer(mapRef.current, layer.layer_information.url, {
             id: layer.layer_information.id,
             layers: layername[1],
@@ -1713,7 +1714,7 @@ const MapBox = () => {
             var layername = layer.layer_information.layer_name.split('%');
             var stylname = layer.layer_information.style.split('%');
             var url = layer.layer_information.url.split('%');
-          setIsLoading(true); 
+         // setIsLoading(true); 
           var dateToDisplay = layer.layer_information.timeIntervalStart;
           const wmsLayer = addWMSTileLayer(mapRef.current, url[0], {
             id: layer.layer_information.id,
@@ -1755,7 +1756,7 @@ const MapBox = () => {
         }
         else{
 
-          setIsLoading(true); 
+         // setIsLoading(true); 
           var dateToDisplay = layer.layer_information.timeIntervalStart;
           const wmsLayer = addWMSTileLayer(mapRef.current, layer.layer_information.url, {
             id: layer.layer_information.id,
@@ -2210,6 +2211,7 @@ const MapBox = () => {
         }
 
         layers.forEach(layer => {
+           setIsLoading(true);
           try {
             if(!layer.layer_information) return;
             const info = layer.layer_information;

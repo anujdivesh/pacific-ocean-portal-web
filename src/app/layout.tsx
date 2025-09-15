@@ -5,6 +5,8 @@ import "./globals.css";
 import "./bootstrap-client";
 import AppNavbar from "./components/AppNavbar.jsx";
 import StoreProvider from "./GlobalRedux/provider";
+import WelcomeModal from "./components/welcomeModal";
+import GoogleAnalytics from "./components/googleAnalytics";
 
 const geistSans = localFont({
   src: [
@@ -55,6 +57,8 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         <StoreProvider>
+             <WelcomeModal />
+             <GoogleAnalytics/>
           <AppNavbar />
           {children}
         </StoreProvider>
