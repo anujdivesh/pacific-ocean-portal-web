@@ -301,6 +301,7 @@ const MapBox = () => {
     
       // Cleanup any pending requests and markers
       cleanupMarkers();
+      setIsLoading(true)
 
       // Use a timeout to debounce rapid successive calls
       pendingRequestRef.current = setTimeout(async () => {
@@ -477,6 +478,7 @@ const MapBox = () => {
           pendingRequestRef.current = null;
         }
       }, 100); // 100ms debounce time
+      setIsLoading(false)
     };
 
     // Helper function to transform data to GeoJSON
@@ -546,6 +548,7 @@ const MapBox = () => {
         
     const fetchAndPlotGeoJSON = async (url,id) => {
       try {
+        setIsLoading(true)
           // First remove any existing cluster layer
       if (mapRef.current && isMapInitialized.current) {
         try {
@@ -718,7 +721,7 @@ const MapBox = () => {
           markerClusterGroup.addLayer(geoJsonLayer);
           try { markerClusterGroup._datasetId = id; } catch {}
           mapRef.current.addLayer(markerClusterGroup);
-      
+      setIsLoading(false)
       } catch (error) {
       //    console.error('Error fetching GeoJSON data:', error);
       }
@@ -731,6 +734,7 @@ const MapBox = () => {
                   mapRef.current.removeLayer(layer);
               }
           });
+          setIsLoading(true)
     
           // Create marker cluster group
           const markerClusterGroup = L.markerClusterGroup({
@@ -870,12 +874,14 @@ const MapBox = () => {
           markerClusterGroup.addLayer(geoJsonLayer);
           try { markerClusterGroup._datasetId = id; } catch {}
           mapRef.current.addLayer(markerClusterGroup);
-    
+          setIsLoading(false)
       } catch (error) {
         //  console.error('Error fetching GeoJSON data:', error);
       }
     };
     
+
+
       useEffect(() => {
         // Ensure the map container exists and has proper dimensions
         const mapContainer = document.getElementById('map');
