@@ -31,7 +31,7 @@ const MapBox = () => {
     const isVisible = useAppSelector((state) => state.offcanvas.isVisible);
 
     const dispatch = useAppDispatch();
-    const { center, zoom, bounds, maxBounds, layers, basemap, eezoverlay,enable_eez,enable_coastline,coastlineoverlay,citynamesoverlay,enable_citynames, sidebarCollapsed } = useAppSelector((state) => state.mapbox);
+    const { center, zoom, bounds, maxBounds, layers, basemap, eezoverlay,enable_eez,enable_coastline,coastlineoverlay,citynamesoverlay,enable_citynames, sidebarCollapsed,rerenderKey } = useAppSelector((state) => state.mapbox);
     // Build a lightweight signature of layer params that should force a visual refresh when they change
     const layerSignature = useMemo(() => {
       if (!layers || !Array.isArray(layers)) return '';
@@ -2127,6 +2127,8 @@ const MapBox = () => {
 
   // Handle sidebar collapse/expand - invalidate map size when sidebar toggles
   useEffect(() => {
+
+      setIsLoading(true)
     if (mapRef.current && isMapInitialized.current) {
       // Use setTimeout to ensure the DOM has updated before invalidating size
       setTimeout(() => {
@@ -2135,9 +2137,10 @@ const MapBox = () => {
         } catch (error) {
           console.error('Error invalidating map size:', error);
         }
-      }, 100);
+      }, 700);
+      setIsLoading(false)
     }
-  }, [sidebarCollapsed]);
+  }, [sidebarCollapsed,rerenderKey]);
 
 
       // Helper reused by overlay effects

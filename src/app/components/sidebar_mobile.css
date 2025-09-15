@@ -1,3 +1,14 @@
+.mobile-handle-area {
+  display: none !important;
+}
+ 
+@media (max-width: 1004px) {
+ 
+  .mobile-handle-area {
+    display: block !important;
+  }
+}
+
 @media (max-width: 1004px) {
    
 

@@ -10,14 +10,13 @@ import MyWorkbench from './workbench';
 import { setDataset } from '@/app/GlobalRedux/Features/dataset/dataSlice';
 import { setAccordion } from '@/app/GlobalRedux/Features/accordion/accordionSlice';
 import { showsideoffCanvas } from '@/app/GlobalRedux/Features/sideoffcanvas/sideoffcanvasSlice';
-import { setBounds } from '@/app/GlobalRedux/Features/map/mapSlice';
+import { setBounds,triggerMapRerender } from '@/app/GlobalRedux/Features/map/mapSlice';
 import SideOffCanvas from './side_offcanvas';
 import { hideoffCanvas } from '@/app/GlobalRedux/Features/offcanvas/offcanvasSlice';
 import { MdAddCircleOutline } from 'react-icons/md';
 import { CgMoreO, CgSearch } from 'react-icons/cg';
 import { get_url } from './urls';
 import { setShortName } from '@/app/GlobalRedux/Features/country/countrySlice';
-
 // Corrected path: original code referenced './Model' which doesn't exist; using existing './Modal.jsx'
 const ExploreModal = dynamic(() => import('./Modal'), { ssr: false });
 
@@ -199,7 +198,10 @@ const SideBar = ({ collapsed = false, onToggle = () => {}, onOpenMapData }) => {
       <button
         type="button"
         aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        onClick={() => onToggle(!collapsed)}
+        onClick={() => {
+          
+          onToggle(!collapsed)
+        dispatch(triggerMapRerender());}}
         className={styles.collapseBtn}
       >
         <div className="collapseInnerCircle">

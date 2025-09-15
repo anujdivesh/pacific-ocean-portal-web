@@ -9,6 +9,7 @@ const mapSlice = createSlice({
     center: [-8, 179.3053],
     bounds:null,
     layers: [],
+    rerenderKey: 0,
     basemap: {
       url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
       //url: 'https://ocean-plotter.spc.int/plotter/cache/basemap/{z}/{x}/{y}.png',
@@ -49,6 +50,9 @@ const mapSlice = createSlice({
   reducers: {
     setDataLimit(state, action) {
       state.dataLimit = action.payload;
+    },
+    triggerMapRerender(state) {
+      state.rerenderKey += 1;
     },
 	
     setCenter(state, action) {
@@ -153,5 +157,5 @@ const mapSlice = createSlice({
   },
 });
 
-export const { setCenter, setZoom, setBounds, addMapLayer, removeMapLayer,updateMapLayer,setBaseMapLayer,setOverlayLayer,setEEZEnable,setCoastlineLayer,setCoastlineEnable,setCityNameLayer,setCityNameEnable,removeAllMapLayer,removeDuplicateLayers,toggleSidebar,setSidebarCollapsed, handleStationSearchKeyDown, selectStation, setDataLimit } = mapSlice.actions;
+export const { setCenter, setZoom, setBounds, addMapLayer, removeMapLayer,updateMapLayer,setBaseMapLayer,setOverlayLayer,setEEZEnable,setCoastlineLayer,setCoastlineEnable,setCityNameLayer,setCityNameEnable,removeAllMapLayer,removeDuplicateLayers,toggleSidebar,setSidebarCollapsed, handleStationSearchKeyDown, selectStation, setDataLimit,triggerMapRerender } = mapSlice.actions;
 export default mapSlice.reducer;
