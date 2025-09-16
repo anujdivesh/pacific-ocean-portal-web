@@ -623,6 +623,7 @@ const Library = () => {
       {/* Share Modal */}
       <Modal 
         show={showShareModal} 
+        size="lg"
         onHide={() => setShowShareModal(false)} 
         contentClassName={styles.shareLibraryModalContent}
         backdropClassName={styles.shareLibraryModalBackdrop}

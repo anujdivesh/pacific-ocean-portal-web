@@ -42,6 +42,7 @@ export default function DashboardInfoModal({ show, onHide, card }) {
       <Modal
         show={show}
         onHide={onHide}
+        size="lg"
         className="dashboard-modal"
         style={{ borderRadius: '0' }}
         contentClassName="rounded-0"
