@@ -720,8 +720,25 @@ const formatShortTimestamp = (timestamp, currentIndex) => {
     }
 };
 
-  const handleDownload = () => {
-    saveAs(images[currentIndex], generateFilename(timestamps[currentIndex]));
+  const handleDownload = async () => {
+    const mapImageUrl = images[currentIndex];
+    try {
+      const response = await fetch(mapImageUrl, { mode: 'cors' });
+      if (!response.ok) throw new Error('Network response was not ok');
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = generateFilename(timestamps[currentIndex]);
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      }, 100);
+    } catch (err) {
+      setError('Failed to download image');
+    }
   };
 
   const generateFilename = (timestamp) => {
@@ -805,7 +822,7 @@ const visibleDots = timestamps.slice(
         </div>
 
         {/* Use Cache toggle (Bootstrap switch) */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '2px'}}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '2px',paddingLeft:'10%'}}>
           <div className="form-check form-switch">
             <input
               className="form-check-input"
