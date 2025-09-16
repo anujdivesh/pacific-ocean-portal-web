@@ -1,6 +1,7 @@
 .shareLibraryModalContent {
   box-shadow: none !important;
   border: none !important;
+  border-radius: 0 !important;
 }
 
 .shareLibraryModalHeader {
@@ -10,30 +11,25 @@
   border-radius: 0 !important;
   box-shadow: none !important;
   position: relative;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
 }
 
+.modal-content{
+  border-radius: 0px!important;
+}
 .shareLibraryModalHeader .btn-close {
-  filter: invert(1) brightness(200%) !important;
+  filter: none !important;
   color: #fff !important;
   opacity: 1 !important;
   background: none !important;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='white' viewBox='0 0 16 16'%3E%3Cpath d='M2.146 2.146a.5.5 0 0 1 .708 0L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E") !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23ffffff' viewBox='0 0 16 16'%3E%3Cpath d='M2.146 2.146a.5.5 0 0 1 .708 0L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E") !important;
   background-size: 1em 1em !important;
   background-position: center !important;
   background-repeat: no-repeat !important;
 }
 
-.shareLibraryModalHeader .btn-close:hover {
-  filter: invert(1) brightness(260%) !important;
-  opacity: 1 !important;
-}
-
-.shareLibraryModalHeader .btn-close svg,
-.shareLibraryModalHeader .btn-close::before,
-.shareLibraryModalHeader .btn-close::after {
-  color: #fff !important;
-  fill: #fff !important;
-}
 
 .shareLibraryModalFooter {
   border: none !important;
@@ -47,3 +43,27 @@
   box-shadow: none !important;
   opacity: 0 !important;
 }
+
+.btn-close-custom {
+  background: none !important;
+  border: none !important;
+  cursor: pointer !important;
+  padding: 0.5rem !important;
+  opacity: 1 !important;
+  transition: opacity 0.2s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.btn-close-custom:hover {
+  filter: none !important;
+  opacity: 0.8 !important;
+}
+
+.btn-close-custom svg {
+  fill: #ffffff !important;
+  width: 16px !important;
+  height: 16px !important;
+}
+

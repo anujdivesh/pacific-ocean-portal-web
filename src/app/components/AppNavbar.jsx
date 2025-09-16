@@ -51,7 +51,9 @@ export default function AppNavbar({ logoutButtonSize = 'sm' }) {
       if (is === '1') {
         dispatch(loginAction());
         const c = localStorage.getItem('auth:country');
-        if (c) dispatch(updateCountry(c));
+        if (c) dispatch(updateCountry(c)); 
+        const t = localStorage.getItem('auth:token'); 
+        if (t) dispatch(updateToken(t));
       }
     } catch {}
 
@@ -101,12 +103,15 @@ export default function AppNavbar({ logoutButtonSize = 'sm' }) {
         if (loginState.countryId) dispatch(setCountryShort(loginState.countryId));
       } catch {}
       // Persist lightweight auth signal for client hydration
-      try {
+      try { 
         localStorage.setItem('auth:isLoggedin', '1');
         if (loginState.countryId) {
           localStorage.setItem('auth:country', String(loginState.countryId));
           // Also update region selection for flag
           localStorage.setItem('selectedRegion', String(loginState.countryId));
+        }
+        if (loginState.token) { 
+          localStorage.setItem('auth:token', loginState.token); 
         }
       } catch {}
     }

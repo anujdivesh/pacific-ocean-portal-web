@@ -17,7 +17,8 @@ const resolveKey = () => {
 const encodedKey = new TextEncoder().encode(resolveKey());
 
 export async function createSession(countryId: string, userId: string) {
-  const expiresAt = new Date(Date.now() + 23 * 60 * 60 * 1000);
+  // const expiresAt = new Date(Date.now() + 23 * 60 * 60 * 1000);
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); 
   const session = await encrypt({ countryId, userId, expiresAt });
   const cookieStore = await cookies();
   cookieStore.set("session", session, {

@@ -617,9 +617,6 @@ const Library = () => {
           background: #e67e00 !important;
           color: #fff !important;
         }
- .dashboard-modal .btn-close {
-      filter: invert(1) grayscale(100%) brightness(200%);
-    }
 
       `}</style>
       
@@ -631,12 +628,33 @@ const Library = () => {
         backdropClassName={styles.shareLibraryModalBackdrop}
       >
         <Modal.Header 
-          closeButton 
+          // closeButton 
           className={styles.shareLibraryModalHeader}
         >
           <Modal.Title>
             Share Document
           </Modal.Title>
+          <button 
+            type="button" 
+            className="btn-close-custom" 
+            onClick={() => setShowShareModal(false)}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '0.5rem',
+              opacity: '1',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+            aria-label="Close"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="#ffffff" viewBox="0 0 16 16" width="20" height="20">
+              <path d="M2.146 2.146a.5.5 0 0 1 .708 0L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854a.5.5 0 0 1 0-.708z"/>
+            </svg>
+            
+          </button>
         </Modal.Header>
         <Modal.Body>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 15 }}>
