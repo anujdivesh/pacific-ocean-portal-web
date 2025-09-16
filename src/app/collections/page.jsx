@@ -141,7 +141,9 @@ function Collections() {
             const baseUrl = componentName.startsWith('http://') || componentName.startsWith('https://')
                 ? componentName.split('?')[0]
                 : `https://ocean-plugin.spc.int/${componentName.replace(/^\//,'').split('?')[0]}`;
-            const finalUrl = `${baseUrl}?token=${tokenParam}&country=${countryParam}`;
+            //commenting country out.
+            //const finalUrl = `${baseUrl}?token=${tokenParam}&country=${countryParam}`;
+            const finalUrl = `${baseUrl}?token=${tokenParam}&country=`;
             window.open(finalUrl, '_blank', 'noopener,noreferrer');
             return;
         }
