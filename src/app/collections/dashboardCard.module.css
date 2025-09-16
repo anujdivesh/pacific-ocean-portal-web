@@ -1,0 +1,48 @@
+/* Consistent card body padding and spacing */
+.dashboardCardBody {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  padding: 16px 14px 10px 14px;
+  min-height: 0;
+  box-sizing: border-box;
+}
+/* Fixed image height for all dashboard cards */
+.dashboardCardImage {
+  height: 140px;
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.custom-dashboard-card {
+  width: 240px;
+  min-width: 180px;
+  max-width: 240px;
+  height: 300px;
+  min-height: 260px;
+  max-height: 300px;
+  margin: 0 auto;
+  transition: width 0.2s, height 0.2s;
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboardCardGap {
+  margin-bottom: 1.5rem; /* vertical gap */
+  margin-right: 2.5rem;  /* horizontal gap */
+}
+
+@media (max-width: 768px) {
+  .custom-dashboard-card {
+    width: 100%;
+    min-width: unset;
+    max-width: unset;
+    height: auto;
+    min-height: unset;
+    max-height: unset;
+  }
+}

@@ -1,10 +1,15 @@
-'use client';
+"use client";
+// import removed: modalBackdropTransparent.css (all modal styles now in dashboardInfoModal.module.css)
 import React, { useEffect, useState } from 'react';
+import DashboardInfoModal from './DashboardInfoModal';
+import styles from './dashboardCard.module.css';
 import { Container, Button, Form, InputGroup } from 'react-bootstrap';
 import { FaSearch } from 'react-icons/fa';
 import { useAppSelector } from '@/app/GlobalRedux/hooks';
 import { get_url } from '../components/urls';
 import Link from 'next/link';
+import { FaInfoCircle } from "react-icons/fa";
+import { ImInfo } from "react-icons/im";
 
 function Collections() {
     const [projects, setProjects] = useState([]);
@@ -12,6 +17,8 @@ function Collections() {
     const [error, setError] = useState(null);
     const [search, setSearch] = useState('');
     const [isDarkMode, setIsDarkMode] = useState(false);
+
+  const [infoModalCard, setInfoModalCard] = useState(null);
 
     const token = useAppSelector((state) => state.auth.token);
     const country = useAppSelector((state) => state.auth.country);
@@ -156,11 +163,19 @@ function Collections() {
       }}>
         <Container>
           <div className="mb-5">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '1.5rem' }}>
-              <Link href="/" style={{ display: 'inline-block', textDecoration: 'none' }}>
-                {/* Logo placeholder */}
-              </Link>
-              <h1 className="display-9 mb-0">Dashboard Collections</h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '1.5rem', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <Link href="/" style={{ display: 'inline-block', textDecoration: 'none' }}>
+                  {/* Logo placeholder */}
+                </Link>
+                <h1 className="display-9 mb-0">Dashboard Collections</h1>
+              </div>
+              <div style={{ fontSize: '1rem', whiteSpace: 'nowrap' }}>
+                Become a contributor{' '}
+                <a href="https://github.com/anujdivesh/ocean-plugin/blob/main/plugin/site1/README.md" target="_blank" rel="noopener noreferrer" style={{ color: '#4a6bff', textDecoration: 'underline', fontWeight: 500 }}>
+                  Learn how &rarr;
+                </a>
+              </div>
             </div>
             <div className="d-flex justify-content-center">
               <Form className="mt-3" autoComplete="off" onSubmit={e => e.preventDefault()} style={{ width: '100%' }}>
@@ -225,12 +240,12 @@ function Collections() {
               </div>
             )}
             {filteredProjects.map(card => (
-              <div key={card.id} className="col-12 col-sm-6 col-md-4 col-lg-3">
-                <div className="card h-100 shadow-sm border-0 overflow-hidden" style={{
+              <div key={card.id} className={`col-12 col-sm-6 col-md-4 col-lg-2 ${styles.dashboardCardGap}`}>
+                <div className={`card h-100 shadow-sm border-0 overflow-hidden ${styles['custom-dashboard-card']}`} style={{
                   backgroundColor: isDarkMode ? '#3F4853' : '',
                   border: isDarkMode ? '1px solid #4E5762' : ''
                 }}>
-                  <div className="card-img-top overflow-hidden" style={{ height: '180px' }}>
+                  <div className="card-img-top overflow-hidden" style={{ height: '140px' }}>
                     <img
                       src={card.display_image_url}
                       className="w-100 h-100 object-cover"
@@ -238,49 +253,50 @@ function Collections() {
                     />
                   </div>
                   <div className="card-body d-flex flex-column" style={{
-                    color: isDarkMode ? 'white' : 'black'  // Changed from 'inherit' to 'black'
+                    color: isDarkMode ? 'white' : 'black'
                   }}>
-                    <h5 className="card-title fw-bold mb-3 text-truncate">
+                    <h5 className="card-title fw-bold mb-3 text-truncate" style={{marginTop:-5}}>
                       {card.display_title}
                     </h5>
-                    <div className="mb-3">
+                    <div className="mb-3" style={{marginTop:-5}}>
                       <p className="mb-1 small" style={{ color: isDarkMode ? '#cbd5e1' : '#6b7280' }}>
                         <span className="fw-semibold">Project:</span> {card.project.project_code}
                       </p>
-                      <p className="mb-0 small" style={{ color: isDarkMode ? '#cbd5e1' : '#6b7280' }}>
+                      <p className="mb-0 small" style={{fontSize:13, color: isDarkMode ? '#cbd5e1' : '#6b7280' }}>
                         <span className="fw-semibold">Maintainer:</span> {card.maintainer}
                       </p>
                     </div>
-                    {card.component_name ? (
+                    <div className="d-flex gap-2 mt-auto">
                       <Button
-                        variant="primary"
-                        className="w-100 d-flex align-items-center justify-content-center py-2 mt-auto"
-                        style={{
-                          backgroundColor: '#4a6bff',
-                          border: 'none',
-                          borderRadius: '8px',
-                          transition: 'all 0.3s ease'
-                        }}
-                        onClick={() => handleDashboardClick(card.component_name, card)}
-                      >
-                        Explore Dashboard
+                        variant="warning"
+                        size="sm"
+                        className="flex-fill"
+                        style={{ fontSize: 15, fontWeight: 500, borderRadius: 8, minWidth: 0,color:'#ffffffff' }}
+                        onClick={() => setInfoModalCard(card)}
+                        title="More Info"
+                      > <ImInfo size={18}/>
                       </Button>
-                    ) : (
-                      <Button
-                        variant="secondary"
-                        className="w-100 d-flex align-items-center justify-content-center py-2 mt-auto"
-                        style={{
-                          border: 'none',
-                          borderRadius: '8px',
-                          transition: 'all 0.3s ease',
-                          backgroundColor: isDarkMode ? '#4E5762' : '',
-                          color: isDarkMode ? 'white' : 'inherit'
-                        }}
-                        disabled
-                      >
-                        No Dashboard Available
-                      </Button>
-                    )}
+                      {card.component_name ? (
+                        <Button
+                          variant="primary"
+                          className="flex-fill d-flex align-items-center justify-content-center"
+                          style={{ fontSize: 15, fontWeight: 500, borderRadius: 8, minWidth: 0, backgroundColor: '#1883ff', border: 'none' }}
+                          onClick={() => handleDashboardClick(card.component_name, card)}
+                        >
+                          Explore Dashboard
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="secondary"
+                          className="flex-fill d-flex align-items-center justify-content-center"
+                          style={{ fontSize: 15, fontWeight: 500, borderRadius: 8, minWidth: 0, backgroundColor: isDarkMode ? '#4E5762' : '', color: isDarkMode ? 'white' : 'inherit', border: 'none' }}
+                          disabled
+                        >
+                          No Dashboard Available
+                        </Button>
+                      )}
+                    </div>
+  <DashboardInfoModal show={!!infoModalCard} onHide={() => setInfoModalCard(null)} card={infoModalCard} />
                   </div>
                 </div>
               </div>

@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Form, Stack, Badge, Image, Spinner } from 'react-bootstrap';
+import { Container, Row, Col, Card, Form, Stack, Badge, Image, Spinner, Modal, Button } from 'react-bootstrap';
+import styles from './page.module.css';
 
 const Library = () => {
   const [countryFilter, setCountryFilter] = useState('All');
@@ -15,6 +16,9 @@ const Library = () => {
   });
   const [loading, setLoading] = useState(true);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [currentShareLink, setCurrentShareLink] = useState('');
+  const [copySuccess, setCopySuccess] = useState('');
 
   const BASE_URL = 'https://ocean-library.spc.int';
   
@@ -142,6 +146,25 @@ const Library = () => {
     return path.startsWith('http') ? path : `${BASE_URL}${path}`;
   };
 
+  const handleShareClick = (doc) => {
+    const shareLink = getFullMediaUrl(doc.pdf);
+    setCurrentShareLink(shareLink);
+    setShowShareModal(true);
+    setCopySuccess('');
+  };
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(currentShareLink)
+      .then(() => {
+        setCopySuccess('Copied!');
+        setTimeout(() => setCopySuccess(''), 2000);
+      })
+      .catch(err => {
+        console.error('Failed to copy: ', err);
+        setCopySuccess('Failed to copy');
+      });
+  };
+
   if (loading && documents.length === 0) {
     return (
       <div className="library-container" style={{
@@ -257,7 +280,7 @@ const Library = () => {
           margin: 0;
           position: relative;
           z-index: 2;
-          top:50%;
+          top: 50%;
         }
 
         @media (max-width: 1400px) {
@@ -385,39 +408,46 @@ const Library = () => {
         .library-card--more {
           position: absolute;
           display: flex;
+          flex-direction: column;
           padding: 6px 6px 6px 0;
           border-bottom-left-radius: 16px;
           background: ${isDarkMode ? '#3F4853' : '#fff'};
           top: 0;
           right: 0;
           z-index: 2;
+          gap: 4px;
         }
 
         @media (max-width: 1400px) {
           .library-card--more {
             padding: 5px 5px 5px 0;
+            gap: 3px;
           }
         }
 
         @media (max-width: 992px) {
           .library-card--more {
             padding: 4px 4px 4px 0;
+            gap: 3px;
           }
         }
 
         @media (max-width: 768px) {
           .library-card--more {
             padding: 3px 3px 3px 0;
+            gap: 2px;
           }
         }
 
         @media (max-width: 576px) {
           .library-card--more {
             padding: 2px 2px 2px 0;
+            gap: 2px;
           }
         }
 
-        .library-card--more a {
+        .library-card--more a,
+        .library-card--more button {
           margin: 0 0 0 6px;
           padding: 5px 10px;
           background: #ff8c00;
@@ -429,10 +459,17 @@ const Library = () => {
           z-index: 1;
           font-size: 0.7rem;
           transition: all 0.3s ease;
+          cursor: pointer;
+          text-align: center;
+        }
+
+        .library-card--more button {
+          background: #5FA3FA;
         }
 
         @media (max-width: 1400px) {
-          .library-card--more a {
+          .library-card--more a,
+          .library-card--more button {
             padding: 4px 8px;
             font-size: 0.65rem;
             margin: 0 0 0 5px;
@@ -440,7 +477,8 @@ const Library = () => {
         }
 
         @media (max-width: 992px) {
-          .library-card--more a {
+          .library-card--more a,
+          .library-card--more button {
             padding: 3px 6px;
             font-size: 0.6rem;
             margin: 0 0 0 4px;
@@ -448,7 +486,8 @@ const Library = () => {
         }
 
         @media (max-width: 768px) {
-          .library-card--more a {
+          .library-card--more a,
+          .library-card--more button {
             padding: 2px 5px;
             font-size: 0.55rem;
             margin: 0 0 0 3px;
@@ -456,7 +495,8 @@ const Library = () => {
         }
 
         @media (max-width: 576px) {
-          .library-card--more a {
+          .library-card--more a,
+          .library-card--more button {
             padding: 2px 4px;
             font-size: 0.5rem;
             margin: 0 0 0 2px;
@@ -469,10 +509,19 @@ const Library = () => {
           box-shadow: 0 8px 25px rgba(0,0,0,0.2);
         }
 
+        .library-card--more a:hover,
+        .library-card--more button:hover {
+          transform: scale(1.05);
+        }
+
         .library-card--more a:hover {
           background: #e67e00;
           color: #fff;
-          transform: scale(1.05);
+        }
+
+        .library-card--more button:hover {
+          background: #5FA3FA;
+          color: #fff;
         }
 
         /* Geometric Cutout Styles */
@@ -567,10 +616,60 @@ const Library = () => {
         .library-card--more a:hover {
           background: #e67e00 !important;
           color: #fff !important;
-          transform: scale(1.05);
         }
+ .dashboard-modal .btn-close {
+      filter: invert(1) grayscale(100%) brightness(200%);
+    }
 
       `}</style>
+      
+      {/* Share Modal */}
+      <Modal 
+        show={showShareModal} 
+        onHide={() => setShowShareModal(false)} 
+        contentClassName={styles.shareLibraryModalContent}
+        backdropClassName={styles.shareLibraryModalBackdrop}
+      >
+        <Modal.Header 
+          closeButton 
+          className={styles.shareLibraryModalHeader}
+        >
+          <Modal.Title>
+            Share Document
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 15 }}>
+            <tbody>
+              <tr>
+                <td style={{ fontWeight: 600, padding: '8px 10px', borderBottom: '1px solid #eee', width: '5%' }}>URL</td>
+                <td style={{ padding: '8px 10px', borderBottom: '1px solid #eee' }}>
+                  <div className="d-flex align-items-center">
+                    <Form.Control 
+                      type="text" 
+                      value={currentShareLink} 
+                      readOnly 
+                      style={{ marginRight: '10px' }}
+                    />
+                    <Button 
+                      variant={copySuccess ? 'success' : 'primary'} 
+                      onClick={copyToClipboard}
+                      style={{ whiteSpace: 'nowrap' }}
+                    >
+                      {copySuccess ? copySuccess : 'Copy Link'}
+                    </Button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </Modal.Body>
+        <Modal.Footer className={styles.shareLibraryModalFooter}>
+          <Button variant="secondary" onClick={() => setShowShareModal(false)}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
       
       <Container fluid className="py-4" style={{
         backgroundColor: isDarkMode ? '#2E2E32' : '#FAFAFA',
@@ -743,6 +842,14 @@ const Library = () => {
                           >
                             View PDF
                           </a>
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleShareClick(doc);
+                            }}
+                          >
+                            Share
+                          </button>
                         </div>
                       </div>
                     </div>
