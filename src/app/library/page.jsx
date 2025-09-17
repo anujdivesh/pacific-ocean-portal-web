@@ -66,40 +66,57 @@ const Library = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        
+
         const [countriesRes, documentTypesRes, yearsRes] = await Promise.all([
           fetch(`${BASE_URL}/library/countries/`),
           fetch(`${BASE_URL}/library/document-types/`),
           fetch(`${BASE_URL}/library/years/`)
         ]);
-        
+
         const [countriesData, documentTypesData, yearsData] = await Promise.all([
           countriesRes.json(),
           documentTypesRes.json(),
           yearsRes.json()
         ]);
-        
+
         setFilterOptions({
           countries: countriesData,
           documentTypes: documentTypesData,
           years: yearsData
         });
 
-        // Set default values to first document type if available
-        if (documentTypesData.length > 0) {
+        // Parse query params from URL
+        const params = new URLSearchParams(window.location.search);
+        const urlCountry = params.get('country_id');
+        const urlDocType = params.get('document_type_id');
+        const urlYear = params.get('year_id');
+
+        // Set dropdowns from URL if present, else use defaults
+        if (urlCountry && countriesData.some(c => String(c.id) === urlCountry)) {
+          setCountryFilter(urlCountry);
+        }
+        if (urlDocType && documentTypesData.some(d => String(d.id) === urlDocType)) {
+          setDocumentTypeFilter(urlDocType);
+        } else if (documentTypesData.length > 0) {
           setDocumentTypeFilter(documentTypesData[0].id);
         }
-
-        // Build initial URL with default document type if available
-        let initialUrl = `${BASE_URL}/library/documents/`;
-        if (documentTypesData.length > 0) {
-          initialUrl += `?document_type_id=${documentTypesData[0].id}`;
+        if (urlYear && yearsData.some(y => String(y.id) === urlYear)) {
+          setYearFilter(urlYear);
         }
-        
+
+        // Build initial URL based on query params or defaults
+        let initialUrl = `${BASE_URL}/library/documents/?`;
+        let urlParams = [];
+        if (urlCountry && countriesData.some(c => String(c.id) === urlCountry)) urlParams.push(`country_id=${encodeURIComponent(urlCountry)}`);
+        if (urlDocType && documentTypesData.some(d => String(d.id) === urlDocType)) urlParams.push(`document_type_id=${encodeURIComponent(urlDocType)}`);
+        if (urlYear && yearsData.some(y => String(y.id) === urlYear)) urlParams.push(`year_id=${encodeURIComponent(urlYear)}`);
+        if (urlParams.length > 0) initialUrl += urlParams.join('&');
+        else if (documentTypesData.length > 0) initialUrl += `document_type_id=${documentTypesData[0].id}`;
+
         const docsRes = await fetch(initialUrl);
         const docsData = await docsRes.json();
         setDocuments(docsData);
-        
+
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -796,6 +813,48 @@ const Library = () => {
                     </Form.Select>
                   </Form.Group>
                 </Form>
+                {/* Small Share Button below the year filter */}
+                <div style={{
+                  marginTop: 8,
+                  marginBottom: 0,
+                  display: 'flex',
+                  justifyContent: 'flex-end',
+                }}>
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    style={{
+                      borderRadius: '100px',
+                      fontWeight: 700,
+                      fontSize: '0.85rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      boxShadow: 'none',
+                      background: '#0275d8',
+                      color: '#fff',
+                      border: 'none',
+                    }}
+                    onClick={() => {
+                      // Build share URL for the current host and path, with query params matching the filters
+                      let params = [];
+                      if (countryFilter !== 'All') params.push(`country_id=${encodeURIComponent(countryFilter)}`);
+                      if (documentTypeFilter !== 'All') params.push(`document_type_id=${encodeURIComponent(documentTypeFilter)}`);
+                      if (yearFilter !== 'All') params.push(`year_id=${encodeURIComponent(yearFilter)}`);
+                      let url = window.location.origin + window.location.pathname;
+                      if (params.length > 0) url += '?' + params.join('&');
+                      setCurrentShareLink(url);
+                      setShowShareModal(true);
+                      setCopySuccess('');
+                    }}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" style={{width:16, height:16, marginRight:4, verticalAlign:'middle'}}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6A2.25 2.25 0 005.25 5.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M18 12l-3-3m0 0l3-3m-3 3h9" />
+                    </svg>
+                    Share
+                  </Button>
+                </div>
               </Card.Body>
             </Card>
           </Col>
