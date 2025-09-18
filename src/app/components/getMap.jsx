@@ -723,7 +723,8 @@ const formatShortTimestamp = (timestamp, currentIndex) => {
   const handleDownload = async () => {
     const mapImageUrl = images[currentIndex];
     try {
-      const response = await fetch(mapImageUrl, { mode: 'cors' });
+      const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(mapImageUrl)}`;
+      const response = await fetch(proxyUrl);
       if (!response.ok) throw new Error('Network response was not ok');
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
