@@ -26,8 +26,9 @@ function Opacity({ item,id}) {
         opacity: event.target.value,
         zoomToLayer:false // Updated value
       }
+     
     });
-
+    console.log(event.target.value) //works
     event.currentTarget.blur()
   };
 
@@ -91,7 +92,7 @@ return(
           step={0.1}
           value={value}
           onChange={(e) => handleChange(e, item)}
-          style={{ "--percent": `${(value * 100)}%` }}
+          style={{ "--value": value }}
           onClick={(e) => e.currentTarget.blur()}
         />
       </div>
