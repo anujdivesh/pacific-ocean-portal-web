@@ -91,7 +91,7 @@ return(
           step={0.1}
           value={value}
           onChange={(e) => handleChange(e, item)}
-          style={{ "--percent": `${(value * 100)}%` }}
+          style={{ "--value": value }}
           onClick={(e) => e.currentTarget.blur()}
         />
       </div>
