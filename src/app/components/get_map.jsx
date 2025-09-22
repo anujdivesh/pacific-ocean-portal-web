@@ -2220,7 +2220,14 @@ const MapBox = () => {
         }
         const group = datasetLayerGroupRef.current;
         // Clear previous dataset layers only (static overlays untouched)
-        try { group.clearLayers(); } catch {}
+        try {         
+          group.eachLayer(layer => {
+            if (mapRef.current.hasLayer(layer)) {
+              mapRef.current.removeLayer(layer);
+            }
+          });
+          group.clearLayers(); 
+        } catch {}
 
         if (layers.length === 0) {
           setShowTime(false);
