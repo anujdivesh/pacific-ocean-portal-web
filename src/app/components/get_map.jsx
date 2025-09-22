@@ -40,18 +40,20 @@ const MapBox = () => {
         return [
           info.id,
           info.enabled ? 1 : 0,
-      info.enable_cog ? 1 : 0,
+          info.enable_cog ? 1 : 0,
           info.layer_type,
-      info.url,
-      info.layer_name,
+          info.url,
+          info.layer_name,
           info.timeIntervalStart,
-            info.timeIntervalEnd,
+          info.timeIntervalEnd,
           info.colormin, info.colormax, info.opacity,
           info.style,
           info.is_composite ? 1 : 0,
           info.numcolorbands,
-      info.logscale ? 1 : 0,
-      String(info.cog_params || '')
+          info.logscale ? 1 : 0,
+          String(info.cog_params || ''),
+          // Include selectedSofarTypes for SOFAR layers
+          Array.isArray(info.selectedSofarTypes) ? info.selectedSofarTypes.join(',') : ''
         ].join(':');
       }).join('|');
     }, [layers]);
@@ -299,6 +301,12 @@ const MapBox = () => {
         selectedTypesLength: selectedTypes.length
       });*/
     
+      // If selectedTypes is empty, do not plot anything
+      if (!selectedTypes || selectedTypes.length === 0) {
+        cleanupMarkers();
+        setIsLoading(false);
+        return;
+      }
       // Cleanup any pending requests and markers
       cleanupMarkers();
       setIsLoading(true)

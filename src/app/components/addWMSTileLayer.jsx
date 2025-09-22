@@ -34,6 +34,7 @@ const addWMSTileLayer = (map, url, options = {}, handleShow) => {
         ...options,
     });
 
+
     // Add the layer to the map
     wmsLayer.addTo(map);
 
@@ -79,10 +80,47 @@ const addWMSTileLayer = (map, url, options = {}, handleShow) => {
 
     wmsLayer.on('tileerror', handleTileError);
 
-    // Feature info on click event
-    map.on('click', function (evt) {
-        const latlng = evt.latlng;
-        getFeatureInfo(latlng, url, wmsLayer, map);
+    // --- Feature info click handler management ---
+    // Use a counter on the map instance to track active WMS layers
+    if (!map._activeWMSLayerCount) map._activeWMSLayerCount = 0;
+    map._activeWMSLayerCount++;
+
+        // Only attach one click handler for GetFeatureInfo per map
+        if (!map._wmsFeatureInfoHandlerAttached) {
+            map._wmsFeatureInfoHandlerAttached = true;
+            map.on('click', function (evt) {
+                // Find all visible WMS layers on the map
+                const visibleWmsLayers = [];
+                map.eachLayer(l => {
+                    if (l instanceof L.TileLayer.WMS && map.hasLayer(l)) {
+                        visibleWmsLayers.push(l);
+                    }
+                });
+                if (visibleWmsLayers.length === 0) return;
+                // Find the topmost visible WMS layer whose layer name does NOT contain 'dir'
+                let topNonDirLayer = null;
+                for (let i = visibleWmsLayers.length - 1; i >= 0; i--) {
+                    const lyr = visibleWmsLayers[i];
+                    const layerName = (lyr.options.layers || '').toLowerCase();
+                    if (!layerName.includes('dir')) {
+                        topNonDirLayer = lyr;
+                        break;
+                    }
+                }
+                if (!topNonDirLayer) return; // No non-direction layer found
+                const latlng = evt.latlng;
+                const layerUrl = topNonDirLayer._url || url;
+                getFeatureInfo(latlng, layerUrl, topNonDirLayer, map);
+            });
+        }
+
+    // Remove the click handler when this layer is removed
+    wmsLayer.on('remove', function () {
+        map._activeWMSLayerCount = Math.max(0, (map._activeWMSLayerCount || 1) - 1);
+        if (map._activeWMSLayerCount === 0 && map._wmsFeatureInfoHandler) {
+            map.off('click', map._wmsFeatureInfoHandler);
+            map._wmsFeatureInfoHandler = null;
+        }
     });
 
     // Function to retrieve GetFeatureInfo from WMS
@@ -147,28 +185,24 @@ const addWMSTileLayer = (map, url, options = {}, handleShow) => {
         el.innerHTML = content;
 
 
-        // Example: assuming the feature info is in a table and extracting the text
+
+        // Extract variable name (assume in p[3] if table structure is standard)
         const p = el.getElementsByTagName('td');
+        let variableName = "Value";
         let featureInfo = "No Data";
         if (p.length > 5) {
+            variableName = p[0] ? p[0].textContent.trim() : "Value";
             featureInfo = p[5] ? p[5].textContent.trim() : "No Data";
             // Try to convert to number and format to 2 decimal places if it's a valid number
             const num = Number(featureInfo);
             if (!isNaN(num)) {
                 featureInfo = num.toFixed(2);
             }
-        } else {
-            featureInfo = "No Data";
         }
-    
 
-        // Create popup content with a dynamic click handler for 'handleShow'
-       /*const popupContent = `
-            <p>Value: ${featureInfo}</p>
-            <a href="javascript:void(0);" class="open-timeseries-link" style="display: block;">&nbsp;more...</a>
-        `;*/
+        // Create popup content with variable name
         const popupContent = `
-            <p>Value: ${featureInfo}</p>
+            <p>${variableName}: ${featureInfo}</p>
         `;
 
         // Show the popup
