@@ -194,13 +194,12 @@ export default function AppNavbar({ logoutButtonSize = 'sm' }) {
               <Navbar.Brand as={Link} href="/" className={styles.navbarBrand}>
                 {flagSrc && (
                   <span className={styles.flagContainer}>
-                    <img src={flagSrc} alt="Country flag" className={styles.flagImage} onError={(e) => { e.currentTarget.style.display='none'; }} />
+                    <img src={flagSrc} className={styles.flagImage} onError={(e) => { e.currentTarget.style.display='none'; }} />
                   </span>
                 )}
                 <span className={styles.logoContainer}>
                   <img
                     src="/COSPPaC_white_crop2.png"
-                    alt="Pacific Ocean"
                     className={styles.logoImage}
                   />
                 </span>
