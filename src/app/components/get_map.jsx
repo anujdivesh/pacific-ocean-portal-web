@@ -326,7 +326,7 @@ const MapBox = () => {
             spiderfyOnMaxZoom: true,
             showCoverageOnHover: true,
             zoomToBoundsOnClick: true,
-            disableClusteringAtZoom: 14,
+            disableClusteringAtZoom: 12,
             chunkedLoading: true,
             chunkInterval: 100,
             iconCreateFunction: function(cluster) {
@@ -576,7 +576,7 @@ const MapBox = () => {
               spiderfyOnMaxZoom: true,
               showCoverageOnHover: true,
               zoomToBoundsOnClick: true,
-              disableClusteringAtZoom: 14,
+              disableClusteringAtZoom: 12,
               chunkedLoading: true,
               chunkInterval: 100,
               iconCreateFunction: function(cluster) {
@@ -750,7 +750,7 @@ const MapBox = () => {
               spiderfyOnMaxZoom: true,
               showCoverageOnHover: true,
               zoomToBoundsOnClick: true,
-              disableClusteringAtZoom: 14,
+              disableClusteringAtZoom: 12,
               chunkedLoading: true,
               chunkInterval: 100,
               iconCreateFunction: function(cluster) {
@@ -911,7 +911,7 @@ const MapBox = () => {
         zoom: zoom,
         zoomControl: false, // We'll add custom zoom control
         maxBounds: maxBounds,
-        maxZoom: 10,
+        maxZoom: 12,
         minZoom: 2,
         attributionControl: false,
         zoomSnap: 0.5,
