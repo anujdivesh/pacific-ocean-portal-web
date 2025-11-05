@@ -310,6 +310,7 @@ function DynamicImage({ height }) {
        // const end_date = layerInformation.timeIntervalEndOriginal;
         const step = (period === "PT6H" || period === "PT1H") ? layerInformation.interval_step : 24;
         var result = generateDateArray(start_date, end_date, step);
+        
         var limit = layerInformation.no_of_plots;
         if (limit !== 999) {
             result = result.slice(-limit);
@@ -336,6 +337,7 @@ function DynamicImage({ height }) {
       }
       else if (period === "OPENDAP") {
         const result_str = layerInformation.specific_timestemps;
+
         const result_process = result_str.split(",");
 
         const result = result_process.map(item => {
@@ -343,9 +345,7 @@ function DynamicImage({ height }) {
           return trimmedItem.endsWith('Z') ? trimmedItem : `${trimmedItem}Z`;
         });
         
-        if (result.length > 30) {
-          result.splice(0, result.length - 30);
-        }
+        
         var coral = 'False';
         if (layerInformation.id == 4 || layerInformation.id == 19){
           coral = 'True'

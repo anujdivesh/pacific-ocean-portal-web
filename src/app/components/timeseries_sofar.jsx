@@ -1,7 +1,7 @@
 //'use client';
 import React, { useState, useEffect, useRef,Suspense } from 'react';
 import { Spinner, Form, Button } from 'react-bootstrap'; 
-import { Line } from 'react-chartjs-2'; 
+import { Line, Scatter } from 'react-chartjs-2'; 
 import 'chart.js/auto'; 
 import { useAppSelector } from '@/app/GlobalRedux/hooks';
 import Lottie from "lottie-react";
@@ -26,7 +26,8 @@ const getColorByIndex = (index) => {
 
 function TimeseriesSofar({ height, data }) {
   // Detect dark mode
-  const isDarkMode = typeof document !== 'undefined' && document.body.classList.contains('dark-mode');
+    const isDarkMode = typeof document !== 'undefined' && document.body.classList.contains('dark-mode'); 
+    const [chartType, setChartType] = useState('line');
   const mainTextColor = isDarkMode ? '#fff' : '#181c20';
   const mapLayer = useAppSelector((state) => state.mapbox.layers);
   const lastlayer = useRef(0);
@@ -41,15 +42,21 @@ function TimeseriesSofar({ height, data }) {
   // Reset chartData when station changes to avoid stale plots
   useEffect(() => {
     setChartData({ labels: [], datasets: [] });
+    setIsLimitUserOverridden(false);
+    setServerDataLimit(null);
   }, [station]);
   const dataLimitFromRedux = useAppSelector((state) => state.mapbox.dataLimit);
   const [isLoading, setIsLoading] = useState(false);
   const [enabledChart, setEnabledChart] = useState(true);
   const [liveMode, setLiveMode] = useState(false);
   const [dataLimit, setDataLimit] = useState(() => {
-    console.log('Initial dataLimitFromRedux:', dataLimitFromRedux);
     return dataLimitFromRedux || 100;
   });
+  // API default data limit and user override tracking
+  const [serverDataLimit, setServerDataLimit] = useState(null);
+  const [isLimitUserOverridden, setIsLimitUserOverridden] = useState(false);
+  const isLimitUserOverriddenRef = useRef(false);
+  useEffect(() => { isLimitUserOverriddenRef.current = isLimitUserOverridden; }, [isLimitUserOverridden]);
   // Separate date and time controls for better control over defaults
   const [startDate, setStartDate] = useState("");
   const [startTime, setStartTime] = useState("00:00");
@@ -102,9 +109,17 @@ function TimeseriesSofar({ height, data }) {
   useEffect(() => {
     if (dataLimitFromRedux && dataLimitFromRedux !== dataLimit) {
       console.log('Updating dataLimit from Redux:', dataLimitFromRedux);
-      setDataLimit(dataLimitFromRedux);
+      const maxAllowed = typeof serverDataLimit === 'number' ? serverDataLimit : 1000;
+      setDataLimit(Math.min(maxAllowed, dataLimitFromRedux));
     }
-  }, [dataLimitFromRedux]);
+  }, [dataLimitFromRedux, serverDataLimit]);
+
+  // Ensure current dataLimit never exceeds serverDataLimit when it becomes available
+  useEffect(() => {
+    if (typeof serverDataLimit === 'number' && dataLimit > serverDataLimit) {
+      setDataLimit(serverDataLimit);
+    }
+  }, [serverDataLimit]);
   const isCoordinatesValid = station !== null;
   const isActive = y === 'TRUE';
 
@@ -186,7 +201,8 @@ function TimeseriesSofar({ height, data }) {
   function generateWaveDataUrl(spotterId, token) {
     if (!spotterId) return ""; // Prevent .toString error if undefined
     const baseUrl = get_url('insitu-station');
-    return `${baseUrl}/${spotterId.toString()}?limit=${dataLimit}`;
+    const effectiveLimit = typeof serverDataLimit === 'number' ? Math.min(dataLimit, serverDataLimit) : dataLimit;
+    return `${baseUrl}/${spotterId.toString()}?limit=${effectiveLimit}`;
   }
 
   // Combine separate date and time into ISO format
@@ -229,12 +245,8 @@ function TimeseriesSofar({ height, data }) {
         setDataFn([], []);
         return;
       }
-   
-      // console.log('🔍 Fetching URL:', url);
       setIsLoading(true);
-
-      // Avoid sending Content-Type or credentials for simple GET requests
-      // which can trigger CORS preflight failures on some APIs.
+      //console.log(url)
       const res = await fetch(url, {
         method: 'GET',
         mode: 'cors',
@@ -243,158 +255,100 @@ function TimeseriesSofar({ height, data }) {
         },
         credentials: 'omit',
       });
-
-      // console.log('🔍 Response status:', res.status);
-      // console.log('🔍 Response headers:', Object.fromEntries(res.headers.entries()));
-
       if (!res.ok) {
         const text = await res.text().catch(() => '');
         console.error('Fetch failed, status:', res.status, 'body:', text);
-        throw new Error(`HTTP error! status: ${res.status}`);
-      }
-
-      const data = await res.json();
-      // console.log('🔍 Response data:', data);
-      
-      const waveData = data.data;
-      const dataLabels = data.data_labels ? data.data_labels.split(',') : [];
-
-      if (!waveData || waveData.length === 0) {
-        // console.log('⚠️  No data returned from API');
         setDataFn([], []);
         return;
       }
-  
-      // data.data.forEach((entry, idx) => {
-      //   console.log(`Entry ${idx}:`, entry);
-      // });
-    
-  // Find the time label 
-  const timeLabel = dataLabels.find(label => label.trim().toLowerCase() === 'time');
-  if (!timeLabel) {
-    throw new Error('No "time" label found in data_labels');
-  }
-  //y-axis datasets
-  const yLabels = dataLabels.filter(label => label.trim() !== timeLabel);
-    const times = waveData.map(entry => {
-  const time = entry[timeLabel];
-  // If time is ISO string, strip seconds and always append 'Z'
-  if (typeof time === 'string') {
-    // Match "T12:34:56", "T12:34:56.789", "T12:34", etc.
-    // Remove seconds, keep "T12:34", and add 'Z' at the end
-    const match = time.match(/^(.+T\d{2}:\d{2})/);
-    const base = match ? match[1] : time;
-    return base + 'Z';
-  }
-  // If time is a Date object, format as "YYYY-MM-DDTHH:MMZ"
-  const date = new Date(time);
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}T${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}Z`;
-});
-
-    // X-axis labels (format as UTC)
-   /* const times = waveData.map(entry => {
-      const time = entry[timeLabel];
-      const date = new Date(time);      
-      return `${String(date.getDate()).padStart(2, '0')}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getFullYear()).slice(-2)}T${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-    });*/
-      // Y-axis datasets (dynamic)
+      const data = await res.json();
+      
+      // Apply API data_limit only if the user hasn't overridden the limit
+      if (typeof data.data_limit === 'number') {
+        setServerDataLimit(data.data_limit);
+        if (!isLimitUserOverriddenRef.current) {
+          setDataLimit(data.data_limit);
+        }
+      }
+      // Set chartType from API response
+      setChartType(data.chart_type || 'line');
+      const waveData = data.data;
+      const dataLabels = data.data_labels ? data.data_labels.split(',') : [];
+      if (!waveData || waveData.length === 0) {
+        setDataFn([], []);
+        return;
+      }
+      const timeLabel = dataLabels.find(label => label.trim().toLowerCase() === 'time');
+      if (!timeLabel) {
+        setDataFn([], []);
+        return;
+      }
+      const yLabels = dataLabels.filter(label => label.trim() !== timeLabel);
+      const times = waveData.map(entry => {
+        const time = entry[timeLabel];
+        if (typeof time === 'string') {
+          const match = time.match(/^(.+T\d{2}:\d{2})/);
+          const base = match ? match[1] : time;
+          return base + 'Z';
+        }
+        const date = new Date(time);
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}T${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}Z`;
+      });
       const datasets = yLabels.map(label => ({
-        label: label.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()), 
+        label: label.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
         values: waveData.map(entry => entry[label])
       }));
-      setDataFn(times, datasets);
-  } catch (error) {
-    console.log(`Error fetching wave data:`, error);
-    setDataFn([], []);
-  } finally {
-    setIsLoading(false);
-  }
-};
-
-  // OLD ERDDAP fetch function (commented out, now using fetchWaveData for all APIs):
-  // const fetchWaveDataV2 = async (url, setDataFn) => {
-  //   try {
-  //     if (!url) {
-  //       setDataFn([], []);
-  //       return;
-  //     }
-   
-  //     setIsLoading(true);
-  //     const res = await fetch(url, {
-  //       method: 'GET',
-  //       mode: 'cors',
-  //       credentials: 'omit', // Fixes CORS for public ERDDAP
-  //       headers: {
-  //         'Accept': 'application/json',
-  //       },
-  //     });
-
-  //     if (!res.ok) {
-  //       throw new Error(`HTTP error! status: ${res.status}`);
-  //     }
-
-  //     const data = await res.json();
-  //     const features = data.features;
-
-  //     const times = features.map(feature => feature.properties.time);
-  //     const waveHeights = features.map(feature => feature.properties.waveHs);
-  //     const peakPeriods = features.map(feature => feature.properties.waveTp);
-  //     const meanDirections = features.map(feature => feature.properties.waveDp);
-
-  //     const formattedTimes = times.map(time => {
-  //       const date = new Date(time);
-  //       return `${String(date.getDate()).padStart(2, '0')}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getFullYear()).slice(-2)}T${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-  //     });
-
-  //     setDataFn(formattedTimes, [
-  //       { values: waveHeights, label: 'Significant Wave Height (m)' },
-  //       { values: peakPeriods, label: 'Peak Period (s)' },
-  //       { values: meanDirections, label: 'Mean Direction (degrees)' }
-  //     ]);
       
-  //   } catch (error) {
-  //     console.log(`Error fetching wave data:`, error);
-  //     setDataFn([], []);
-  //   } finally {
-  //     setIsLoading(false);
-  //   }
-  // };
+  setDataFn(times, datasets);
+    } catch (error) {
+      console.log(`Error fetching wave data:`, error);
+      setDataFn([], []);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const setChartDataFn = (times, datasets) => {
-
-    // console.log("START LABEL AND VALUE>>>>>>>>>>>>>>>");
-
-    // console.log("<<<<<<<<<<< LABEL AND VALUE END");
     const indices = times.map((t, i) => i);
-  indices.sort((a, b) => {
-    // Parse custom format "DD-MM-YYTHH:MM" as UTC
-    const parseCustom = (str) => {
-      const [datePart, timePart] = str.split('T');
-      const [day, month, year] = datePart.split('-');
-      const [hour, minute] = timePart.split(':');
-      return Date.UTC(
-        parseInt('20' + year), // assumes YY is 25, so 2025
-        parseInt(month) - 1,
-        parseInt(day),
-        parseInt(hour),
-        parseInt(minute)
-      );
-    };
-    return parseCustom(times[a]) - parseCustom(times[b]);
-  });
+    indices.sort((a, b) => {
+      // Robust timestamp parse: try ISO-8601 first, then fallback to "DD-MM-YYTHH:MM"
+      const parseTimestamp = (str) => {
+        const iso = Date.parse(str);
+        if (!isNaN(iso)) return iso;
+        try {
+          const [datePart, timePartRaw] = str.split('T');
+          if (!datePart || !timePartRaw) return NaN;
+          const [day, month, year] = datePart.split('-');
+          const [hour, minute] = timePartRaw.split(':');
+          const fullYear = (year && year.length === 2) ? `20${year}` : year;
+          return Date.UTC(
+            parseInt(fullYear, 10),
+            parseInt(month, 10) - 1,
+            parseInt(day, 10),
+            parseInt(hour, 10),
+            parseInt(minute, 10)
+          );
+        } catch {
+          return NaN;
+        }
+      };
+      const ta = parseTimestamp(times[a]);
+      const tb = parseTimestamp(times[b]);
+      if (isNaN(ta) && isNaN(tb)) return 0;
+      if (isNaN(ta)) return -1;
+      if (isNaN(tb)) return 1;
+      return ta - tb; // ascending: oldest left, newest right
+    });
 
-  const sortedTimes = indices.map(i => times[i]);
-  const sortedDatasets = datasets.map(ds => ({
-    ...ds,
-    values: indices.map(i => ds.values[i])
-  }));
-  //////////////SRTING TIMES///////////////// removed sortedTimes and sortedDatasets
-
+    const sortedTimes = indices.map(i => times[i]);
+    const sortedDatasets = datasets.map(ds => ({
+      ...ds,
+      values: indices.map(i => ds.values[i])
+    }));
     
     setChartData({
       labels: sortedTimes,
       datasets: sortedDatasets.map((dataset, index) => {
-        // console.log(dataset)
         // Filter out -999 values by replacing them with null to create gaps
         const filteredValues = dataset.values.map(value => {
           // Check for -999 or similar missing data indicators
@@ -442,7 +396,9 @@ function TimeseriesSofar({ height, data }) {
   const handleLimitChange = (e) => {
     const newLimit = parseInt(e.target.value);
     if (!isNaN(newLimit)) {
-      setDataLimit(Math.min(1000, Math.max(1, newLimit)));
+      const maxAllowed = typeof serverDataLimit === 'number' ? serverDataLimit : 1000;
+      setIsLimitUserOverridden(true);
+      setDataLimit(Math.min(maxAllowed, Math.max(1, newLimit)));
     }
   };
 
@@ -504,15 +460,9 @@ function TimeseriesSofar({ height, data }) {
   else{
     if (isCoordinatesValid && mapLayer.length > 0) {
     // Prevent duplicate calls by checking if same URL was called recently (within 1 second)
-    // OLD ERDDAP API (commented out):
-    // const baseUrl = 'https://erddap.cdip.ucsd.edu/erddap/tabledap/wave_agg.geoJson';
-    // const parameters = 'station_id,time,waveHs,waveTp,waveTa,waveDp,latitude,longitude';
-    // const waveFlagPrimary = 1;
-    // const url = `${baseUrl}?${parameters}&station_id="${station}"&waveFlagPrimary=${waveFlagPrimary}`;
-    
-    // NEW API using get_url('insitu-station'):
-    const baseUrl = get_url('insitu-station');
-    const url = `${baseUrl}/${station}?limit=${dataLimit}`;
+  const baseUrl = get_url('insitu-station');
+  const effectiveLimit = typeof serverDataLimit === 'number' ? Math.min(dataLimit, serverDataLimit) : dataLimit;
+  const url = `${baseUrl}/${station}?limit=${effectiveLimit}`;
     const now = Date.now();
     
     if (lastRequestRef.current && 
@@ -526,14 +476,10 @@ function TimeseriesSofar({ height, data }) {
     lastRequestRef.current = { url, timestamp: now };
 
     // console.log('🚀 Making API call (PACIOOS):', url);
-    // OLD: fetchWaveDataV2(url, setChartDataFn);
-    // NEW: Use the same fetch function as non-PACIOOS
     fetchWaveData(url, setChartDataFn);
 
       if (liveMode && isActive) {
         refreshIntervalRef.current = setInterval(() => {
-          // OLD: fetchWaveDataV2(url, setChartDataFn);
-          // NEW: Use the same fetch function as non-PACIOOS
           fetchWaveData(url, setChartDataFn);
         }, 1800000);
       }
@@ -605,18 +551,14 @@ function TimeseriesSofar({ height, data }) {
         endDateStr = formatDate(now);
       }
 
-      // Use your API instead of ERDDAP
-      const baseUrl = get_url('insitu-station');
-      const url = `${baseUrl}/${station}?limit=${dataLimit}`;
+  const baseUrl = get_url('insitu-station');
+  const effectiveLimit = typeof serverDataLimit === 'number' ? Math.min(dataLimit, serverDataLimit) : dataLimit;
+  const url = `${baseUrl}/${station}?limit=${effectiveLimit}`;
 
-      // OLD: fetchWaveDataV2(url, setChartDataFn);
-      // NEW: Use the same fetch function as non-PACIOOS
       fetchWaveData(url, setChartDataFn);
 
       if (liveMode && isActive) {
         refreshIntervalRef.current = setInterval(() => {
-          // OLD: fetchWaveDataV2(url, setChartDataFn);
-          // NEW: Use the same fetch function as non-PACIOOS
           fetchWaveData(url, setChartDataFn);
         }, 1800000);
       }
@@ -751,7 +693,7 @@ useEffect(() => {
             value={dataLimit}
             onChange={handleLimitChange}
             min="1"
-            max="1000"
+            max={typeof serverDataLimit === 'number' ? serverDataLimit : 1000}
             style={{ 
               width: '60px',
               height: '25px',
@@ -880,23 +822,12 @@ useEffect(() => {
           </Button>
         </div>
       </div>
-      {/* <<<<<<<<<<Spotter ID Heading */}
-      {/* <div style={{
-        padding: '0 10px',
-        backgroundColor: '#f8f9fa',
-        borderBottom: '1px solid #dee2e6',
-        fontWeight: 'bold',
-        fontSize: '14px'
-      }}>
-        Spotter ID: {station}
-      </div> */}
-      {/* >>>>>>>>>>>END Spotter ID Heading */}
+
       <div style={{ 
         flex: 1,
         position: 'relative',
         minHeight: 0
       }}>
-        {/* Dynamic y-axes logic */}
         {(() => {
           // Check if there's no data
           const hasData = chartData.datasets && chartData.datasets.length > 0 && 
@@ -907,19 +838,16 @@ useEffect(() => {
             const isDarkMode = document.body.classList.contains('dark-mode');
             const textColor = isDarkMode ? '#ffffff' : '#666666';
            
-            
             return (
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 height: '100%',
-             
-            //    color: textColor,
+                color: textColor,
                 fontSize: '18px',
                 fontWeight: '500',
                 textAlign: 'center',
-             //   border: `1px solid ${isDarkMode ? '#4a5568' : '#dee2e6'}`,
                 borderRadius: '4px'
               }}>
                 No available data for this station
@@ -969,10 +897,10 @@ useEffect(() => {
           const scales = {
             x: {
               title: {
-      display: true,
-      text: 'Time (UTC)',
-      color: textColor,
-    },
+                display: true,
+                text: 'Time (UTC)',
+                color: textColor,
+              },
               ticks: {
                 display: true,
                 maxRotation: 45,
@@ -996,49 +924,110 @@ useEffect(() => {
             scales[axis.id] = axis;
           });
 
-          return (
-            <Suspense fallback={<Spinner animation="border" />}>
-              <Line
-                data={chartData}
-                options={{
-                  backgroundColor: 'transparent',
-                  maintainAspectRatio: false,
-                  responsive: true,
-                  scales: scales,
-                  interaction: {
-                    mode: 'index',
-                    intersect: false,
-                  },
-                  plugins: {
-                    tooltip: {
-                      backgroundColor: isDarkMode ? '#2d3748' : 'rgba(0,0,0,0.8)',
-                      titleColor: '#ffffff',
-                      bodyColor: '#ffffff',
-                      borderColor: gridColor,
-                      borderWidth: 1,
-                      callbacks: {
-                        label: function(context) {
-                          return `${context.dataset.label}: ${context.parsed.y}`;
-                        }
-                      }
-                    },
-                    legend: {
-                      labels: {
-                        color: textColor,
-                        font: {
-                          weight: 'normal'
-                        }
+          return (() => {
+            if (chartType === 'scatter') {
+              // SIMPLER FIX: Use the exact same data structure as line chart but configure as scatter
+              const scatterData = {
+                labels: chartData.labels,
+                datasets: chartData.datasets.map((dataset, index) => ({
+                  ...dataset,
+                  showLine: false, // This is what makes it scatter
+                  pointRadius: 5,
+                  pointHoverRadius: 7,
+                  fill: false,
+                }))
+              };
+              
+              return (
+                <Suspense fallback={<Spinner animation="border" />}>
+                  <Line // Use Line component but configure as scatter
+                    data={scatterData}
+                    options={{
+                      backgroundColor: 'transparent',
+                      maintainAspectRatio: false,
+                      responsive: true,
+                      scales: scales,
+                      interaction: {
+                        mode: 'index',
+                        intersect: false,
                       },
-                      title: {
-                        display: false,
-                        color: textColor,
+                      plugins: {
+                        tooltip: {
+                          backgroundColor: isDarkMode ? '#2d3748' : 'rgba(0,0,0,0.8)',
+                          titleColor: '#ffffff',
+                          bodyColor: '#ffffff',
+                          borderColor: gridColor,
+                          borderWidth: 1,
+                          callbacks: {
+                            label: function(context) {
+                              return `${context.dataset.label}: ${context.parsed.y}`;
+                            }
+                          }
+                        },
+                        legend: {
+                          labels: {
+                            color: textColor,
+                            font: {
+                              weight: 'normal'
+                            }
+                          },
+                          title: {
+                            display: false,
+                            color: textColor,
+                          }
+                        }
                       }
-                    }
-                  }
-                }}
-              />
-            </Suspense>
-          );
+                    }}
+                  />
+                </Suspense>
+              );
+            } else {
+              // Default to line chart
+              return (
+                <Suspense fallback={<Spinner animation="border" />}>
+                  <Line
+                    data={chartData}
+                    options={{
+                      backgroundColor: 'transparent',
+                      maintainAspectRatio: false,
+                      responsive: true,
+                      scales: scales,
+                      interaction: {
+                        mode: 'index',
+                        intersect: false,
+                      },
+                      plugins: {
+                        tooltip: {
+                          backgroundColor: isDarkMode ? '#2d3748' : 'rgba(0,0,0,0.8)',
+                          titleColor: '#ffffff',
+                          bodyColor: '#ffffff',
+                          borderColor: gridColor,
+                          borderWidth: 1,
+                          callbacks: {
+                            label: function(context) {
+                              return `${context.dataset.label}: ${context.parsed.y}`;
+                            }
+                          }
+                        },
+                        legend: {
+                          labels: {
+                            color: textColor,
+                            font: {
+                              weight: 'normal'
+                            }
+                          },
+                          title: {
+                            display: false,
+                            color: textColor,
+                          }
+                        }
+                      }
+                    }}
+                  />
+                </Suspense>
+              );
+            }
+          })();
         })()}
       </div>
     </div>
