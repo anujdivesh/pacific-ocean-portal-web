@@ -1816,9 +1816,15 @@ const MapBox = () => {
             return `${yyyy}${mm}`;
           }
           const formattedDate = formatYearMonth(dateToDisplay); // '202412'
-
+          var newFilename;
+          if (compositeParts[1].includes("_")) {
+              newFilename = compositeParts[0] + formattedDate+"_"+formattedDate + compositeParts[compositeParts.length - 1];
+          }
+          else{
+          newFilename = compositeParts[0] + formattedDate + compositeParts[compositeParts.length - 1];
+          }
           // 3. Construct new filename
-          const newFilename = compositeParts[0] + formattedDate + compositeParts[compositeParts.length - 1];
+          //const newFilename = compositeParts[0] + formattedDate + compositeParts[compositeParts.length - 1];
           // 'ww3.glob_24m.202412.nc'
 
           // 4. Replace the last part of the url with new filename
@@ -2408,7 +2414,13 @@ const MapBox = () => {
                 const yyyy = d.getUTCFullYear();
                 const mm = String(d.getUTCMonth()+1).padStart(2,'0');
                 const formattedDate = `${yyyy}${mm}`;
-                const newFilename = compositeParts[0] + formattedDate + compositeParts[compositeParts.length - 1];
+                var newFilename
+                if (compositeParts[1].includes("_")) {
+                    newFilename = compositeParts[0] + formattedDate+"_"+formattedDate + compositeParts[compositeParts.length - 1];
+                }
+                else{
+                newFilename = compositeParts[0] + formattedDate + compositeParts[compositeParts.length - 1];
+                }
                 const urlParts = info.url.split('/');
                 urlParts[urlParts.length-1] = newFilename;
                 const hindUrl = urlParts.join('/');

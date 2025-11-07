@@ -21,9 +21,12 @@ function DynamicImage({ height }) {
   const [error, setError] = useState(null);
   const [dotOffset, setDotOffset] = useState(0);
   const [enabledMap, setEnabledMap] = useState(false);
+  const [units, setUnits] = useState('metric'); // 'metric' | 'imperial'
+  const [unitConversionEnabled, setUnitConversionEnabled] = useState(false);
 
   const dateFormatAccepted = useRef(null);
   const dateToDisplay = useRef(null);
+  const skipNextTimestampInit = useRef(false); // prevent resetting index when only units change
   const [loadingTime, setLoadingTime] = useState(0);
   const MAX_VISIBLE_DOTS = 25;
   const imgHeight = height || 200;
@@ -251,6 +254,12 @@ function DynamicImage({ height }) {
       }
       
       const layerInformation = selected_layer.layer_information;
+      var unit_conversion = layerInformation.unit_conversion;
+      setUnitConversionEnabled(!!unit_conversion);
+      if (!unit_conversion) {
+        // Force default to metric when unit conversion is not supported
+        setUnits('metric');
+      }
       const period = layerInformation.period;
       const enable_map = layerInformation.enable_get_map;
       setEnabledMap(enable_map)
@@ -324,16 +333,41 @@ function DynamicImage({ height }) {
         if (layerInformation.id == 4 || layerInformation.id == 19){
           coral = 'True'
         }
+        // Preserve currently selected timestamp when units change
+        const prevTimestamp = timestamps[currentIndex];
+        let newIndex = 0;
+        if (prevTimestamp) {
+          const exactIdx = result.indexOf(prevTimestamp);
+          if (exactIdx !== -1) {
+            newIndex = exactIdx;
+          } else {
+            // find closest timestamp
+            const target = new Date(prevTimestamp).getTime();
+            newIndex = result.reduce((bestIdx, t, idx) => {
+              const cur = Math.abs(new Date(t).getTime() - target);
+              const best = Math.abs(new Date(result[bestIdx]).getTime() - target);
+              return cur < best ? idx : bestIdx;
+            }, 0);
+          }
+        }
+
         const dynamicImages = result.map((date) => {
           const base = get_url('getMap') + `region=` + short_name + `&layer_map=` + layerInformation.id + `&time=${date}`;
+          const unitParam = `&unit=${units}`;
           const cacheParam = `&use_cache=${useCache ? 'True' : 'False'}`;
           const nocache = useCache ? '' : `&nocache=${Date.now()}`;
-          return base + cacheParam + nocache + `&token=${token_id}`;
+          return base + unitParam + cacheParam + nocache + `&token=${token_id}`;
         });
+        skipNextTimestampInit.current = true;
         setImages(dynamicImages);
         setTimestamps(result);
+        setCurrentIndex(Math.min(newIndex, result.length - 1));
+        const centered = Math.max(0, Math.min(
+          newIndex - Math.floor(MAX_VISIBLE_DOTS / 2),
+          Math.max(0, result.length - MAX_VISIBLE_DOTS)
+        ));
+        setDotOffset(centered);
         setLoading(true);
-        setDotOffset(0);
       }
       else if (period === "OPENDAP") {
         const result_str = layerInformation.specific_timestemps;
@@ -350,21 +384,45 @@ function DynamicImage({ height }) {
         if (layerInformation.id == 4 || layerInformation.id == 19){
           coral = 'True'
         }
+        // Preserve currently selected timestamp when units change
+        const prevTimestamp = timestamps[currentIndex];
+        let newIndex = 0;
+        if (prevTimestamp) {
+          const exactIdx = result.indexOf(prevTimestamp);
+          if (exactIdx !== -1) {
+            newIndex = exactIdx;
+          } else {
+            const target = new Date(prevTimestamp).getTime();
+            newIndex = result.reduce((bestIdx, t, idx) => {
+              const cur = Math.abs(new Date(t).getTime() - target);
+              const best = Math.abs(new Date(result[bestIdx]).getTime() - target);
+              return cur < best ? idx : bestIdx;
+            }, 0);
+          }
+        }
+
         const dynamicImages = result.map((date) => {
           const cleanDate = date.replace(/\s/g, "");
           const base = get_url('getMap') + `region=` + short_name + `&layer_map=` + layerInformation.id + `&time=${cleanDate}`;
+          const unitParam = `&unit=${units}`;
           const cacheParam = `&use_cache=${useCache ? 'True' : 'False'}`;
           const nocache = useCache ? '' : `&nocache=${Date.now()}`;
-          return base + cacheParam + nocache + `&token=${token_id}`;
+          return base + unitParam + cacheParam + nocache + `&token=${token_id}`;
         });
 
+        skipNextTimestampInit.current = true;
         setImages(dynamicImages);
         setTimestamps(result);
+        setCurrentIndex(Math.min(newIndex, result.length - 1));
+        const centered = Math.max(0, Math.min(
+          newIndex - Math.floor(MAX_VISIBLE_DOTS / 2),
+          Math.max(0, result.length - MAX_VISIBLE_DOTS)
+        ));
+        setDotOffset(centered);
         setLoading(true);
-        setDotOffset(0);
       }
     }
-  }, [mapLayer, savedRegion,short_name,enabledMap,currentId, useCache]);
+  }, [mapLayer, savedRegion,short_name,enabledMap,currentId, useCache, units]);
 
   useEffect(() => {
     if (images.length > 0 && currentIndex >= images.length) {
@@ -385,6 +443,11 @@ function DynamicImage({ height }) {
 
   // Add this new useEffect to set the initial index based on dateToDisplay
   useEffect(() => {
+    if (skipNextTimestampInit.current) {
+      // Skip resetting index once (e.g., when units changed)
+      skipNextTimestampInit.current = false;
+      return;
+    }
     if (timestamps.length > 0 && dateToDisplay.current) {
       // Normalize both dates to compare them properly
       const targetDate = new Date(dateToDisplay.current);
@@ -791,6 +854,8 @@ const visibleDots = timestamps.slice(
         padding: '10px',
         boxSizing: 'border-box',
       }}>
+        {/* Units toggle */}
+       
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
           <button
             onClick={goToPrevious}
@@ -892,21 +957,64 @@ const visibleDots = timestamps.slice(
                     transition: 'all 0.2s ease'
                   }}
                   onMouseOver={(e) => {
-                    e.target.style.backgroundColor = isDarkMode ? '#6c757d' : '#e9ecef';
-                    e.target.style.color = isDarkMode ? '#ffffff' : '#495057';
+                    e.target.style.backgroundColor = isDarkMode ? '#ff8c00' : '#e9ecef';
+                    e.target.style.color = isDarkMode ? '#ffffff' : '#ff8c00';
                   }}
                   onMouseOut={(e) => {
-                    e.target.style.backgroundColor = isDarkMode ? '#495057' : '#f8f9fa';
-                    e.target.style.color = isDarkMode ? '#ffa500' : '#ff8c00';
+                    e.target.style.backgroundColor = isDarkMode ? '#ff8c00' : '#f8f9fa';
+                    e.target.style.color = isDarkMode ? '#ffffff' : '#ff8c00';
                   }}
                   disabled={loading || error}
                 >
                   Download
                 </a>
+                 <div style={{ display: 'flex', gap: 0}} role="group" aria-label="Units toggle">
+                  <button
+                    type="button"
+                    aria-pressed={units === 'metric'}
+                    onClick={() => setUnits('metric')}
+                    className="btn"
+                    style={{
+                      flex: 1,
+                      borderRadius: 0,
+                      border: '1px solid #5bc0de',
+                      backgroundColor: units === 'metric' ? '#5bc0de' : 'transparent',
+                      color: units === 'metric' ? '#ffffff' : '#5bc0de',
+                      padding: '6px 10px',
+                      cursor: unitConversionEnabled ? 'pointer' : 'not-allowed',
+                      opacity: unitConversionEnabled ? 1 : 0.5
+                    }}
+                    disabled={!unitConversionEnabled}
+                  >
+                    Metric
+                  </button>
+                  <button
+                    type="button"
+                    aria-pressed={units === 'imperial'}
+                    onClick={() => setUnits('imperial')}
+                    className="btn"
+                    style={{
+                      flex: 1,
+                      borderRadius: 0,
+                      border: '1px solid #5bc0de',
+                      borderLeft: 'none',
+                      backgroundColor: units === 'imperial' ? '#5bc0de' : 'transparent',
+                      color: units === 'imperial' ? '#ffffff' : '#5bc0de',
+                      padding: '6px 10px',
+                      cursor: unitConversionEnabled ? 'pointer' : 'not-allowed',
+                      opacity: unitConversionEnabled ? 1 : 0.5
+                    }}
+                    disabled={!unitConversionEnabled}
+                  >
+                    Imperial
+                  </button>
+                </div>
               </>
             );
           })()}
         </div>
+        
+        
       </div>
 
       <div style={{
