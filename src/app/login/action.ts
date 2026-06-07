@@ -2,7 +2,7 @@
 "use server";
 
 import { z } from "zod";
-import { createSession, deleteSession } from "@/app/lib/session";
+import { createSession, deleteSession, SESSION_DURATION_MS } from "@/app/lib/session";
 import { get_url } from '@/app/components/urls';
 
 // Define the login form schema
@@ -19,6 +19,7 @@ interface PrevState {
   };
   success?: boolean;
   message?: string; // Add a message field for API errors
+  sessionExpiry?: number; // Unix ms timestamp when the session expires
 }
 
 export async function login(prevState: PrevState, formData: FormData) {
@@ -94,7 +95,7 @@ export async function login(prevState: PrevState, formData: FormData) {
     await createSession(country_idx, access);
 
     // Return a success flag to update Redux state on the client
-    return { success: true, countryId: country_idx, token: access } as PrevState;
+    return { success: true, countryId: country_idx, token: access, sessionExpiry: Date.now() + SESSION_DURATION_MS } as PrevState;
   } catch (error) {
     console.error("API request failed:", error);
     return {

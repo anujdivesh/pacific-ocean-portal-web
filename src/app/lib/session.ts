@@ -16,9 +16,14 @@ const resolveKey = () => {
 };
 const encodedKey = new TextEncoder().encode(resolveKey());
 
+
+export const SESSION_DURATION_MS = 24 * 60 * 60 * 1000; // 1 minute (use 1 * 60 * 1000 1minute)
+
 export async function createSession(countryId: string, userId: string) {
-  // const expiresAt = new Date(Date.now() + 23 * 60 * 60 * 1000);
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); 
+  
+  // const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  
+  const expiresAt = new Date(Date.now() + SESSION_DURATION_MS);
   const session = await encrypt({ countryId, userId, expiresAt });
   const cookieStore = await cookies();
   cookieStore.set("session", session, {
@@ -43,7 +48,8 @@ export async function encrypt(payload: SessionPayload) {
   return new SignJWT(payload)
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
-    .setExpirationTime("7d")
+    // Previous setting: .setExpirationTime("7d")
+    .setExpirationTime(Math.floor(Date.now() / 1000) + Math.floor(SESSION_DURATION_MS / 1000))
     .sign(encodedKey);
 }
 

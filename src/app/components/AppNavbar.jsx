@@ -53,11 +53,34 @@ export default function AppNavbar({ logoutButtonSize = 'sm' }) {
     try {
       const is = localStorage.getItem('auth:isLoggedin');
       if (is === '1') {
-        dispatch(loginAction());
-        const c = localStorage.getItem('auth:country');
-        if (c) dispatch(updateCountry(c)); 
-        const t = localStorage.getItem('auth:token'); 
-        if (t) dispatch(updateToken(t));
+        const t = localStorage.getItem('auth:token');
+        // Check JWT expiry before restoring auth state
+        let tokenExpired = true;
+        if (t) {
+          try {
+            const payload = JSON.parse(atob(t.split('.')[1]));
+            tokenExpired = !payload.exp || payload.exp * 1000 < Date.now();
+          } catch {
+            tokenExpired = true;
+          }
+        }
+        // Prefer the explicit session expiry timestamp stored at login time
+        const storedExpiry = parseInt(localStorage.getItem('auth:sessionExpiry') || '0', 10);
+        const sessionExpired = storedExpiry ? Date.now() > storedExpiry : tokenExpired;
+
+        if (sessionExpired) {
+          // Session has expired – clear persisted auth so user is shown as logged out
+          localStorage.removeItem('auth:isLoggedin');
+          localStorage.removeItem('auth:country');
+          localStorage.removeItem('auth:token');
+          localStorage.removeItem('auth:sessionExpiry');
+          localStorage.removeItem('selectedRegion');
+        } else {
+          dispatch(loginAction());
+          const c = localStorage.getItem('auth:country');
+          if (c) dispatch(updateCountry(c));
+          dispatch(updateToken(t));
+        }
       }
     } catch {}
 
@@ -92,6 +115,33 @@ export default function AppNavbar({ logoutButtonSize = 'sm' }) {
     }
   }, [dark, mounted]);
 
+  // Continuously watch for token expiry while logged in
+  useEffect(() => {
+    if (!isLoggedin) return;
+
+    const checkExpiry = () => {
+      try {
+        const expiry = parseInt(localStorage.getItem('auth:sessionExpiry') || '0', 10);
+        if (!expiry || Date.now() > expiry) {
+          handleLogout();
+        }
+      } catch {
+        handleLogout();
+      }
+    };
+
+    // Check every 30 seconds
+    const interval = setInterval(checkExpiry, 30_000);
+    // Also check immediately when the tab becomes visible again
+    const onVisible = () => { if (document.visibilityState === 'visible') checkExpiry(); };
+    document.addEventListener('visibilitychange', onVisible);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [isLoggedin]);
+
   // Close modal on successful login
   useEffect(() => {
     if (loginState && loginState.success) {
@@ -116,6 +166,9 @@ export default function AppNavbar({ logoutButtonSize = 'sm' }) {
         }
         if (loginState.token) { 
           localStorage.setItem('auth:token', loginState.token); 
+        }
+        if (loginState.sessionExpiry) {
+          localStorage.setItem('auth:sessionExpiry', String(loginState.sessionExpiry));
         }
       } catch {}
     }
@@ -180,6 +233,7 @@ export default function AppNavbar({ logoutButtonSize = 'sm' }) {
       localStorage.removeItem('auth:isLoggedin');
       localStorage.removeItem('auth:country');
       localStorage.removeItem('auth:token');
+      localStorage.removeItem('auth:sessionExpiry');
     } catch {}
   };
 
