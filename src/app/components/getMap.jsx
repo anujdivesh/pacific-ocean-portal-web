@@ -26,6 +26,7 @@ function DynamicImage({ height }) {
 
   const dateFormatAccepted = useRef(null);
   const dateToDisplay = useRef(null);
+  const prevSelectedDate = useRef(null); // last selected date we rendered, to detect date_selector changes
   const skipNextTimestampInit = useRef(false); // prevent resetting index when only units change
   const [loadingTime, setLoadingTime] = useState(0);
   const MAX_VISIBLE_DOTS = 25;
@@ -287,6 +288,15 @@ function DynamicImage({ height }) {
       else if (layerInformation.datetime_format == '3MONTHLY'){
         dateFormatAccepted.current = "3monthly";
       }
+      else if (layerInformation.datetime_format == '3MONTHLY_ORIG'){
+        dateFormatAccepted.current = "3monthly_orig";
+      }
+      else if (layerInformation.datetime_format == '6MONTHLY'){
+        dateFormatAccepted.current = "6monthly";
+      }
+      else if (layerInformation.datetime_format == '12MONTHLY'){
+        dateFormatAccepted.current = "12monthly";
+      }
        else if (layerInformation.datetime_format == '3MONTHLY_SEASONAL'){
         dateFormatAccepted.current = "3monthly_seasonal";
       }
@@ -333,21 +343,35 @@ function DynamicImage({ height }) {
         if (layerInformation.id == 4 || layerInformation.id == 19){
           coral = 'True'
         }
-        // Preserve currently selected timestamp when units change
-        const prevTimestamp = timestamps[currentIndex];
+        // If the selected date changed (e.g. via date_selector), follow it.
+        // Otherwise (units/cache toggle) preserve the currently selected timestamp.
+        const selectedDate = dateToDisplay.current;
+        const dateChanged = prevSelectedDate.current !== selectedDate;
+        prevSelectedDate.current = selectedDate;
+
         let newIndex = 0;
-        if (prevTimestamp) {
-          const exactIdx = result.indexOf(prevTimestamp);
-          if (exactIdx !== -1) {
-            newIndex = exactIdx;
-          } else {
-            // find closest timestamp
-            const target = new Date(prevTimestamp).getTime();
-            newIndex = result.reduce((bestIdx, t, idx) => {
-              const cur = Math.abs(new Date(t).getTime() - target);
-              const best = Math.abs(new Date(result[bestIdx]).getTime() - target);
-              return cur < best ? idx : bestIdx;
-            }, 0);
+        if (dateChanged && selectedDate) {
+          const target = new Date(selectedDate).getTime();
+          newIndex = result.reduce((bestIdx, t, idx) => {
+            const cur = Math.abs(new Date(t).getTime() - target);
+            const best = Math.abs(new Date(result[bestIdx]).getTime() - target);
+            return cur < best ? idx : bestIdx;
+          }, 0);
+        } else {
+          const prevTimestamp = timestamps[currentIndex];
+          if (prevTimestamp) {
+            const exactIdx = result.indexOf(prevTimestamp);
+            if (exactIdx !== -1) {
+              newIndex = exactIdx;
+            } else {
+              // find closest timestamp
+              const target = new Date(prevTimestamp).getTime();
+              newIndex = result.reduce((bestIdx, t, idx) => {
+                const cur = Math.abs(new Date(t).getTime() - target);
+                const best = Math.abs(new Date(result[bestIdx]).getTime() - target);
+                return cur < best ? idx : bestIdx;
+              }, 0);
+            }
           }
         }
 
@@ -384,20 +408,34 @@ function DynamicImage({ height }) {
         if (layerInformation.id == 4 || layerInformation.id == 19){
           coral = 'True'
         }
-        // Preserve currently selected timestamp when units change
-        const prevTimestamp = timestamps[currentIndex];
+        // If the selected date changed (e.g. via date_selector), follow it.
+        // Otherwise (units/cache toggle) preserve the currently selected timestamp.
+        const selectedDate = dateToDisplay.current;
+        const dateChanged = prevSelectedDate.current !== selectedDate;
+        prevSelectedDate.current = selectedDate;
+
         let newIndex = 0;
-        if (prevTimestamp) {
-          const exactIdx = result.indexOf(prevTimestamp);
-          if (exactIdx !== -1) {
-            newIndex = exactIdx;
-          } else {
-            const target = new Date(prevTimestamp).getTime();
-            newIndex = result.reduce((bestIdx, t, idx) => {
-              const cur = Math.abs(new Date(t).getTime() - target);
-              const best = Math.abs(new Date(result[bestIdx]).getTime() - target);
-              return cur < best ? idx : bestIdx;
-            }, 0);
+        if (dateChanged && selectedDate) {
+          const target = new Date(selectedDate).getTime();
+          newIndex = result.reduce((bestIdx, t, idx) => {
+            const cur = Math.abs(new Date(t).getTime() - target);
+            const best = Math.abs(new Date(result[bestIdx]).getTime() - target);
+            return cur < best ? idx : bestIdx;
+          }, 0);
+        } else {
+          const prevTimestamp = timestamps[currentIndex];
+          if (prevTimestamp) {
+            const exactIdx = result.indexOf(prevTimestamp);
+            if (exactIdx !== -1) {
+              newIndex = exactIdx;
+            } else {
+              const target = new Date(prevTimestamp).getTime();
+              newIndex = result.reduce((bestIdx, t, idx) => {
+                const cur = Math.abs(new Date(t).getTime() - target);
+                const best = Math.abs(new Date(result[bestIdx]).getTime() - target);
+                return cur < best ? idx : bestIdx;
+              }, 0);
+            }
           }
         }
 
@@ -592,6 +630,31 @@ function DynamicImage({ height }) {
           
             return `${startMonth} – ${endMonth}`;
           }
+          if (formatType === '3monthly_orig' || formatType === '6monthly' || formatType === '12monthly') {
+            // Expecting input like "2025-01-01T00:00:00"
+            const match = sanitizedTimestamp.match(/^(\d{4})-(\d{2})/);
+            if (!match) return '';
+
+            const spanMonths = formatType === '12monthly' ? 11 : (formatType === '6monthly' ? 5 : 2);
+            const startYear = parseInt(match[1], 10);
+            const startMonthIndex = parseInt(match[2], 10) - 1; // 0-based index
+
+            const startDate = new Date(Date.UTC(startYear, startMonthIndex, 1));
+            const endDate = new Date(Date.UTC(startYear, startMonthIndex + spanMonths, 1));
+
+            const startMonth = startDate.toLocaleString('en-US', {
+              month: 'short',
+              year: 'numeric',
+              timeZone: 'UTC',
+            });
+            const endMonth = endDate.toLocaleString('en-US', {
+              month: 'short',
+              year: 'numeric',
+              timeZone: 'UTC',
+            });
+
+            return `${startMonth} – ${endMonth}`;
+          }
           if (formatType === 'weekly_nrt') {
            // Expecting input like "2025-08-21T00:00:00"
             const match = sanitizedTimestamp.match(/^(\d{4})-(\d{2})-(\d{2})/);
@@ -734,6 +797,31 @@ const formatShortTimestamp = (timestamp, currentIndex) => {
           timeZone: 'UTC',
         });
       
+        return `${startMonth} – ${endMonth}`;
+      }
+      if (formatType === '3monthly_orig' || formatType === '6monthly' || formatType === '12monthly') {
+        // Expecting input like "2025-01-01T00:00:00"
+        const match = sanitizedTimestamp.match(/^(\d{4})-(\d{2})/);
+        if (!match) return '';
+
+        const spanMonths = formatType === '12monthly' ? 11 : (formatType === '6monthly' ? 5 : 2);
+        const startYear = parseInt(match[1], 10);
+        const startMonthIndex = parseInt(match[2], 10) - 1; // 0-based index
+
+        const startDate = new Date(Date.UTC(startYear, startMonthIndex, 1));
+        const endDate = new Date(Date.UTC(startYear, startMonthIndex + spanMonths, 1));
+
+        const startMonth = startDate.toLocaleString('en-US', {
+          month: 'short',
+          year: 'numeric',
+          timeZone: 'UTC',
+        });
+        const endMonth = endDate.toLocaleString('en-US', {
+          month: 'short',
+          year: 'numeric',
+          timeZone: 'UTC',
+        });
+
         return `${startMonth} – ${endMonth}`;
       }
       if (formatType === '3monthly_seasonal') {

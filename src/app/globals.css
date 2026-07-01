@@ -114,7 +114,14 @@ html.dark-mode .date-picker-dark.customInput {
   color: #e6e9ed !important;
 }
 html.dark-mode .date-picker-dark::placeholder { color: #98a2ad !important; }
-html.dark-mode .date-picker-dark:focus { outline: 2px solid #4d8ac9; box-shadow: none; }
+/* Remove the focus glow/outline that lingers after a calendar date is selected */
+.date-picker-dark:focus,
+.react-datepicker__input-container input.date-picker-dark:focus,
+html.dark-mode .date-picker-dark:focus,
+html.light-mode .date-picker-dark:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
 
 /* Placeholder color for dark mode */
 html.dark-mode ::-webkit-input-placeholder {

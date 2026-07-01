@@ -52,6 +52,13 @@ function DateSelector({item,period,startDateStr,endDateStr}) {
         dispatch(updateMapLayer({ id, updates }));
       };
 
+      // Drop the focus glow from the date picker input after a date is selected
+      const blurActiveElement = () => {
+        if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
+          document.activeElement.blur();
+        }
+      };
+
       // Function to handle date changes
       const handleChange = (date,item) => {
         if (item.layer_information.datetime_format === 'MONTHLY'){
@@ -181,6 +188,21 @@ function DateSelector({item,period,startDateStr,endDateStr}) {
               setCurrentDate(dateTimeArray[dateTimeArray.length - 1])
             }
           }
+          else if (item.layer_information.datetime_format === '6MONTHLY' || item.layer_information.datetime_format === '12MONTHLY' || item.layer_information.datetime_format === '3MONTHLY_ORIG') {
+            var dateTimeArray;
+            if (spec !== ""){
+            dateTimeArray = spec.split(',').map(timestamp => new Date(timestamp.trim()));
+            }
+            dateArray.current = dateTimeArray;
+            setStartDate(dateTimeArray[0])
+            setEndDate(dateTimeArray[dateTimeArray.length - 1])
+            if (item.layer_information.layer_type == "WMS_FORECAST"){
+              setCurrentDate(dateTimeArray[0])
+            }
+            else{
+              setCurrentDate(dateTimeArray[dateTimeArray.length - 1])
+            }
+          }
           else if (item.layer_information.datetime_format === 'WEEKLY_NRT'){
             var dateTimeArray;
             if (spec !== ""){
@@ -272,7 +294,73 @@ function DateSelector({item,period,startDateStr,endDateStr}) {
   //new
   let content;
   if (item.layer_information.datetime_format === 'DAILY') {
+    const dailyMinYear = startDate ? new Date(startDate).getFullYear() : new Date().getFullYear() - 10;
+    const dailyMaxYear = endDate ? new Date(endDate).getFullYear() : new Date().getFullYear();
+    const dailyYearOptions = [];
+    for (let y = dailyMinYear; y <= dailyMaxYear; y++) dailyYearOptions.push(y);
+    const monthNames = Array.from({ length: 12 }, (_, m) =>
+      new Date(2000, m, 1).toLocaleString('default', { month: 'long' })
+    );
+
     content = <div style={{ width: '90%' }}>
+    <style>{`
+      .react-datepicker__header {
+        padding-top: 6px;
+        padding-bottom: 4px;
+      }
+      .date-selector-year-header {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 0 8px;
+      }
+      .date-selector-nav-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border: 1px solid #ced4da;
+        border-radius: 50%;
+        background: #ffffff;
+        color: #1f2937;
+        font-size: 16px;
+        line-height: 1;
+        cursor: pointer;
+        transition: background-color 0.15s ease, border-color 0.15s ease;
+      }
+      .date-selector-nav-btn:hover:not(:disabled) {
+        background: #e9eef5;
+        border-color: #4d8ac9;
+      }
+      .date-selector-nav-btn:disabled {
+        opacity: 0.35;
+        cursor: default;
+      }
+      body.dark-mode .date-selector-year-header .date-selector-nav-btn,
+      html.dark-mode .date-selector-year-header .date-selector-nav-btn {
+        background: #3F4853;
+        color: #f1f5f9;
+        border: 1px solid #808080;
+      }
+      body.dark-mode .date-selector-year-header .date-selector-nav-btn:hover:not(:disabled),
+      html.dark-mode .date-selector-year-header .date-selector-nav-btn:hover:not(:disabled) {
+        background: #4b5563;
+        border-color: #4d8ac9;
+      }
+      body.dark-mode .date-selector-dark-select,
+      html.dark-mode .date-selector-dark-select {
+        background-color: #3F4853 !important;
+        color: #f1f5f9 !important;
+        border: 1px solid #808080 !important;
+      }
+      body.dark-mode .date-selector-dark-select option,
+      html.dark-mode .date-selector-dark-select option {
+        background-color: #3F4853 !important;
+        color: #f1f5f9 !important;
+      }
+    `}</style>
   <DatePicker
     id="datepicker"
     selected={currentDate}
@@ -284,6 +372,54 @@ function DateSelector({item,period,startDateStr,endDateStr}) {
     placeholderText="MM/DD/YYYY"
     popperContainer={PortalDatePicker}
     onClick={(e) => e.currentTarget.blur()}
+    onCalendarClose={blurActiveElement}
+    renderCustomHeader={({ date, changeYear, changeMonth, decreaseMonth, increaseMonth, prevMonthButtonDisabled, nextMonthButtonDisabled }) => {
+      const headerDate = date instanceof Date && !isNaN(date)
+        ? date
+        : (currentDate ? new Date(currentDate) : new Date());
+      return (
+      <div className="date-selector-year-header">
+        <button
+          type="button"
+          className="date-selector-nav-btn"
+          onClick={decreaseMonth}
+          disabled={prevMonthButtonDisabled}
+          aria-label="Previous month"
+        >
+          {'‹'}
+        </button>
+        <select
+          value={headerDate.getMonth()}
+          onChange={(e) => { changeMonth(Number(e.target.value)); e.target.blur(); }}
+          className="form-select form-select-sm rounded-pill date-selector-dark-select"
+          style={{ width: 'auto', minWidth: '110px' }}
+        >
+          {monthNames.map((name, m) => (
+            <option key={name} value={m}>{name}</option>
+          ))}
+        </select>
+        <select
+          value={headerDate.getFullYear()}
+          onChange={(e) => { changeYear(Number(e.target.value)); e.target.blur(); }}
+          className="form-select form-select-sm rounded-pill date-selector-dark-select"
+          style={{ width: 'auto', minWidth: '80px' }}
+        >
+          {dailyYearOptions.map((y) => (
+            <option key={y} value={y}>{y}</option>
+          ))}
+        </select>
+        <button
+          type="button"
+          className="date-selector-nav-btn"
+          onClick={increaseMonth}
+          disabled={nextMonthButtonDisabled}
+          aria-label="Next month"
+        >
+          {'›'}
+        </button>
+      </div>
+      );
+    }}
   />
   </div>
   }else if (item.layer_information.datetime_format === 'SPECIFIC') {
@@ -296,9 +432,73 @@ function DateSelector({item,period,startDateStr,endDateStr}) {
     wrapperClassName="w-100"
     popperPlacement="bottom-start"
     popperContainer={PortalDatePicker}
+    onCalendarClose={blurActiveElement}
     />;
   } else if (item.layer_information.datetime_format === 'MONTHLY') {
+    const minYear = startDate ? new Date(startDate).getFullYear() : new Date().getFullYear() - 10;
+    const maxYear = endDate ? new Date(endDate).getFullYear() : new Date().getFullYear();
+    const yearOptions = [];
+    for (let y = minYear; y <= maxYear; y++) yearOptions.push(y);
+
     content = <div style={{ width: '90%' }}>
+    <style>{`
+      .react-datepicker__header {
+        padding-top: 6px;
+        padding-bottom: 4px;
+      }
+      .date-selector-year-header {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 0 8px;
+      }
+      .date-selector-nav-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border: 1px solid #ced4da;
+        border-radius: 50%;
+        background: #ffffff;
+        color: #1f2937;
+        font-size: 16px;
+        line-height: 1;
+        cursor: pointer;
+        transition: background-color 0.15s ease, border-color 0.15s ease;
+      }
+      .date-selector-nav-btn:hover:not(:disabled) {
+        background: #e9eef5;
+        border-color: #4d8ac9;
+      }
+      .date-selector-nav-btn:disabled {
+        opacity: 0.35;
+        cursor: default;
+      }
+      body.dark-mode .date-selector-year-header .date-selector-nav-btn,
+      html.dark-mode .date-selector-year-header .date-selector-nav-btn {
+        background: #3F4853;
+        color: #f1f5f9;
+        border: 1px solid #808080;
+      }
+      body.dark-mode .date-selector-year-header .date-selector-nav-btn:hover:not(:disabled),
+      html.dark-mode .date-selector-year-header .date-selector-nav-btn:hover:not(:disabled) {
+        background: #4b5563;
+        border-color: #4d8ac9;
+      }
+      body.dark-mode .date-selector-dark-select,
+      html.dark-mode .date-selector-dark-select {
+        background-color: #3F4853 !important;
+        color: #f1f5f9 !important;
+        border: 1px solid #808080 !important;
+      }
+      body.dark-mode .date-selector-dark-select option,
+      html.dark-mode .date-selector-dark-select option {
+        background-color: #3F4853 !important;
+        color: #f1f5f9 !important;
+      }
+    `}</style>
     <DatePicker
     showIcon
         selected={currentDate}
@@ -306,15 +506,45 @@ function DateSelector({item,period,startDateStr,endDateStr}) {
         onClick={(e) => e.currentTarget.blur()}
         dateFormat="yyyy/MM" // Display only month and year
         showMonthYearPicker // Show month and year picker
-        showYearDropdown // Show year dropdown
-        scrollableYearDropdown // Make the year dropdown scrollable
-        yearDropdownItemNumber={15} // Number of years to display in dropdown
         minDate={startDate} // Set minimum date
         maxDate={endDate} // Set maximum date
   className="form-control form-control-sm date-picker-dark"
         wrapperClassName="w-100"
         popperPlacement="bottom-start"
         popperContainer={PortalDatePicker}
+        onCalendarClose={blurActiveElement}
+        renderCustomHeader={({ date, changeYear, decreaseYear, increaseYear, prevYearButtonDisabled, nextYearButtonDisabled }) => (
+          <div className="date-selector-year-header">
+            <button
+              type="button"
+              className="date-selector-nav-btn"
+              onClick={decreaseYear}
+              disabled={prevYearButtonDisabled}
+              aria-label="Previous year"
+            >
+              {'‹'}
+            </button>
+            <select
+              value={date.getFullYear()}
+              onChange={(e) => { changeYear(Number(e.target.value)); e.target.blur(); }}
+              className="form-select form-select-sm rounded-pill date-selector-dark-select"
+              style={{ width: 'auto', minWidth: '90px' }}
+            >
+              {yearOptions.map((y) => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
+            <button
+              type="button"
+              className="date-selector-nav-btn"
+              onClick={increaseYear}
+              disabled={nextYearButtonDisabled}
+              aria-label="Next year"
+            >
+              {'›'}
+            </button>
+          </div>
+        )}
       />
       </div>
   } /*else if (item.layer_information.datetime_format === '3MONTHLY') {
@@ -464,6 +694,8 @@ else if (item.layer_information.datetime_format === '3MONTHLY') {
       ...new Set(dateArray.current.map(d => new Date(d).getFullYear()))
     ].sort((a, b) => a - b);
 
+    console.log(dateArray)
+
     const monthsByYear = new Map(); // year -> sorted array of unique month numbers
     dateArray.current.forEach(date => {
       const d = new Date(date);
@@ -549,6 +781,216 @@ else if (item.layer_information.datetime_format === '3MONTHLY') {
             return (
               <option key={`month-${currentYear}-${m}`} value={m}>
                 {startMonth} - {endMonth}
+              </option>
+            );
+          })}
+        </select>
+      </div>
+    );
+  }
+}
+
+
+else if (item.layer_information.datetime_format === '6MONTHLY') {
+  if (!dateArray.current || dateArray.current.length === 0 || !currentDate) {
+    content = <div>Loading dates...</div>;
+  } else {
+    // Build one dropdown: each entry is a 6-month period (start month + 5 months)
+    const periods = dateArray.current
+      .map(d => new Date(d))
+      .sort((a, b) => a - b);
+
+    const formatYM = (d) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+
+    const periodLabel = (d) => {
+      const end = new Date(d.getFullYear(), d.getMonth() + 5, 1);
+      return `${formatYM(d)} - ${formatYM(end)}`;
+    };
+
+    // Resolve current selection safely
+    const curr = currentDate instanceof Date ? currentDate : new Date(currentDate);
+    const selectedKey = periods.some(
+      d => d.getFullYear() === curr.getFullYear() && d.getMonth() === curr.getMonth()
+    )
+      ? `${curr.getFullYear()}-${curr.getMonth()}`
+      : `${periods[0].getFullYear()}-${periods[0].getMonth()}`;
+
+    content = (
+      <div style={{ width: '95%', display: 'flex', gap: '5px', marginLeft: -20 }}>
+          <style>{`
+          body.dark-mode .date-selector-dark-select,
+          html.dark-mode .date-selector-dark-select {
+            background-color: #3F4853 !important;
+            color: #f1f5f9 !important;
+            border: 1px solid #808080 !important;
+          }
+          body.dark-mode .date-selector-dark-select option,
+          html.dark-mode .date-selector-dark-select option {
+            background-color: #3F4853 !important;
+            color: #f1f5f9 !important;
+          }
+        `}</style>
+        {/* 6-Month Period Select */}
+        <select
+          className="form-select form-select-sm rounded-pill date-selector-dark-select"
+          value={selectedKey}
+          style={{ width: '100%' }}
+          onChange={(e) => {
+            const [yStr, mStr] = e.target.value.split('-');
+            const newDate = new Date(currentDate);
+            newDate.setFullYear(parseInt(yStr, 10));
+            newDate.setMonth(parseInt(mStr, 10));
+            setCurrentDate(newDate);
+            handleonchange3month(newDate, item);
+            e.target.blur();
+          }}
+        >
+          {periods.map((d) => {
+            const key = `${d.getFullYear()}-${d.getMonth()}`;
+            return (
+              <option key={`period-${key}`} value={key}>
+                {periodLabel(d)}
+              </option>
+            );
+          })}
+        </select>
+      </div>
+    );
+  }
+}
+
+
+else if (item.layer_information.datetime_format === '3MONTHLY_ORIG') {
+  if (!dateArray.current || dateArray.current.length === 0 || !currentDate) {
+    content = <div>Loading dates...</div>;
+  } else {
+    // Build one dropdown: each entry is a 3-month period (start month + 2 months)
+    const periods = dateArray.current
+      .map(d => new Date(d))
+      .sort((a, b) => a - b);
+
+    const formatYM = (d) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+
+    const periodLabel = (d) => {
+      const end = new Date(d.getFullYear(), d.getMonth() + 2, 1);
+      return `${formatYM(d)} - ${formatYM(end)}`;
+    };
+
+    // Resolve current selection safely
+    const curr = currentDate instanceof Date ? currentDate : new Date(currentDate);
+    const selectedKey = periods.some(
+      d => d.getFullYear() === curr.getFullYear() && d.getMonth() === curr.getMonth()
+    )
+      ? `${curr.getFullYear()}-${curr.getMonth()}`
+      : `${periods[0].getFullYear()}-${periods[0].getMonth()}`;
+
+    content = (
+      <div style={{ width: '95%', display: 'flex', gap: '5px', marginLeft: -20 }}>
+          <style>{`
+          body.dark-mode .date-selector-dark-select,
+          html.dark-mode .date-selector-dark-select {
+            background-color: #3F4853 !important;
+            color: #f1f5f9 !important;
+            border: 1px solid #808080 !important;
+          }
+          body.dark-mode .date-selector-dark-select option,
+          html.dark-mode .date-selector-dark-select option {
+            background-color: #3F4853 !important;
+            color: #f1f5f9 !important;
+          }
+        `}</style>
+        {/* 3-Month Period Select */}
+        <select
+          className="form-select form-select-sm rounded-pill date-selector-dark-select"
+          value={selectedKey}
+          style={{ width: '100%' }}
+          onChange={(e) => {
+            const [yStr, mStr] = e.target.value.split('-');
+            const newDate = new Date(currentDate);
+            newDate.setFullYear(parseInt(yStr, 10));
+            newDate.setMonth(parseInt(mStr, 10));
+            setCurrentDate(newDate);
+            handleonchange3month(newDate, item);
+            e.target.blur();
+          }}
+        >
+          {periods.map((d) => {
+            const key = `${d.getFullYear()}-${d.getMonth()}`;
+            return (
+              <option key={`period-${key}`} value={key}>
+                {periodLabel(d)}
+              </option>
+            );
+          })}
+        </select>
+      </div>
+    );
+  }
+}
+
+
+else if (item.layer_information.datetime_format === '12MONTHLY') {
+  if (!dateArray.current || dateArray.current.length === 0 || !currentDate) {
+    content = <div>Loading dates...</div>;
+  } else {
+    // Build one dropdown: each entry is a 12-month period (start month + 11 months)
+    const periods = dateArray.current
+      .map(d => new Date(d))
+      .sort((a, b) => a - b);
+
+    const formatYM = (d) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+
+    const periodLabel = (d) => {
+      const end = new Date(d.getFullYear(), d.getMonth() + 11, 1);
+      return `${formatYM(d)} - ${formatYM(end)}`;
+    };
+
+    // Resolve current selection safely
+    const curr = currentDate instanceof Date ? currentDate : new Date(currentDate);
+    const selectedKey = periods.some(
+      d => d.getFullYear() === curr.getFullYear() && d.getMonth() === curr.getMonth()
+    )
+      ? `${curr.getFullYear()}-${curr.getMonth()}`
+      : `${periods[0].getFullYear()}-${periods[0].getMonth()}`;
+
+    content = (
+      <div style={{ width: '95%', display: 'flex', gap: '5px', marginLeft: -20 }}>
+          <style>{`
+          body.dark-mode .date-selector-dark-select,
+          html.dark-mode .date-selector-dark-select {
+            background-color: #3F4853 !important;
+            color: #f1f5f9 !important;
+            border: 1px solid #808080 !important;
+          }
+          body.dark-mode .date-selector-dark-select option,
+          html.dark-mode .date-selector-dark-select option {
+            background-color: #3F4853 !important;
+            color: #f1f5f9 !important;
+          }
+        `}</style>
+        {/* 12-Month Period Select */}
+        <select
+          className="form-select form-select-sm rounded-pill date-selector-dark-select"
+          value={selectedKey}
+          style={{ width: '100%' }}
+          onChange={(e) => {
+            const [yStr, mStr] = e.target.value.split('-');
+            const newDate = new Date(currentDate);
+            newDate.setFullYear(parseInt(yStr, 10));
+            newDate.setMonth(parseInt(mStr, 10));
+            setCurrentDate(newDate);
+            handleonchange3month(newDate, item);
+            e.target.blur();
+          }}
+        >
+          {periods.map((d) => {
+            const key = `${d.getFullYear()}-${d.getMonth()}`;
+            return (
+              <option key={`period-${key}`} value={key}>
+                {periodLabel(d)}
               </option>
             );
           })}
@@ -708,6 +1150,7 @@ else if (item.layer_information.datetime_format === 'WEEKLY_NRT') {
   className="form-control form-control-sm date-picker-dark"
     popperPlacement="bottom-start"
     popperContainer={PortalDatePicker}
+    onCalendarClose={blurActiveElement}
 
       // Month/Year selection
 
