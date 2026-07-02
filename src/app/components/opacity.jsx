@@ -6,24 +6,19 @@ import { Row,Col,Badge } from 'react-bootstrap';
 
 function Opacity({ item,id}) {
   const dispatch = useAppDispatch();
-  const [value, setValue] = useState(1);
+  const initialOpacity = parseFloat(item?.layer_information?.opacity);
+  const [value, setValue] = useState(Number.isFinite(initialOpacity) ? initialOpacity : 1);
   const handleUpdateLayer = (id, updates) => {
     dispatch(updateMapLayer({ id, updates }));
   };
 
   const handleChange = (event,item) => {
-    setValue(parseFloat(event.target.value));
-    const updatedObject = {
-      ...item,
-      layer_information: {
-        ...item.layer_information,
-        opacity: event.target.value // Updated value
-      }
-    };
+    const newOpacity = parseFloat(event.target.value);
+    setValue(newOpacity);
     handleUpdateLayer(item.id, {
       layer_information: {
         ...item.layer_information,
-        opacity: event.target.value,
+        opacity: newOpacity,
         zoomToLayer:false // Updated value
       }
     });

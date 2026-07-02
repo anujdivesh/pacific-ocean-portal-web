@@ -79,7 +79,7 @@ const addWMSTileLayer = (map, url, options = {}, handleShow) => {
         id: sourceId,
         type: 'raster',
         source: sourceId,
-        paint: { 'raster-opacity': typeof opacity === 'number' ? opacity : 1, 'raster-fade-duration': 0 },
+        paint: { 'raster-opacity': Number.isFinite(Number(opacity)) ? Number(opacity) : 1, 'raster-fade-duration': 0 },
       },
     ],
     datasetId: id,
