@@ -18,9 +18,39 @@ import Histogram from './histogram';
 import ShareWorkbench from './shareWorkbench';
 import { FaShare } from 'react-icons/fa';
 import GetMapIcon from './GetMapIcon';
+import { withBasePath } from '@/app/lib/basePath';
 
 // Custom tab styles
 const customTabStyles = `
+  /* Header image background on the top tab bar */
+  .custom-bottom-tabs.nav-tabs {
+    position: relative;
+  }
+  .custom-bottom-tabs.nav-tabs::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: -1rem;
+    right: -1rem;
+    bottom: 0;
+    background-image: url(${withBasePath('/SPC_Header3.png')});
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: cover;
+    opacity: 0.3;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .custom-bottom-tabs.nav-tabs .nav-item,
+  .custom-bottom-tabs.nav-tabs .nav-link {
+    position: relative;
+    z-index: 1;
+  }
+  .custom-bottom-tabs.nav-tabs .nav-link {
+    padding-top: 0.75rem !important;
+    padding-bottom: 0.75rem !important;
+  }
+
   .custom-bottom-tabs .nav-link.active {
     color: rgb(0, 123, 255) !important;
     background-color: transparent !important;
@@ -405,7 +435,7 @@ function BottomOffCanvas({ isVisible, id }) {
 
       <style>{customTabStyles}</style>
       
-      <Offcanvas.Body style={{ paddingTop: '3', borderRadius: 0 }}>
+      <Offcanvas.Body style={{ paddingTop: '8px', borderRadius: 0 }}>
         {renderTabsBasedOnLayerType()}
       </Offcanvas.Body>
 
