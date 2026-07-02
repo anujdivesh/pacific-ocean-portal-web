@@ -301,6 +301,14 @@ const MyWorkbench = () => {
           position: relative;
           z-index: 1;
         }
+        /* Keep real content above the fixed motif watermark (zIndex 0),
+           otherwise the watermark paints on top of accordions on small screens. */
+        .workbench-accordion .card,
+        .workbench-accordion #workbenchHints,
+        .workbench-accordion .item {
+          position: relative;
+          z-index: 1;
+        }
       `}</style>
       {mapLayer.length === 0 ? (
   <div className="workbench-accordion" style={{ padding: '20px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
