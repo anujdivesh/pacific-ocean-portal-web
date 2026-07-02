@@ -111,8 +111,19 @@ const NestedAccordion = ({ data, openIds, searchQuery = "" }) => {
     }
   }, [data, activeItemId, dispatch]);
 
+  // Find the display_title of the top-level (root) accordion containing this item
+  const findRootTitle = (contentId) => {
+    for (const rootNode of data) {
+      if (findPathToRoot(rootNode, contentId)) {
+        return rootNode.display_title;
+      }
+    }
+    return null;
+  };
+
   const handleClick = (contentItem) => {
-    dispatch(setDataset(contentItem));
+    const rootTitle = findRootTitle(contentItem.id);
+    dispatch(setDataset(rootTitle ? { ...contentItem, root_title: rootTitle } : contentItem));
     setActiveItemId(contentItem.id);
     
     // Find the path to this item and update accordion state

@@ -123,6 +123,10 @@ const SmallMap = ({ currentDataset }) => {
       const data = await response.json();
       data.timeIntervalStartOriginal = data.timeIntervalStart;
       data.timeIntervalEndOriginal = data.timeIntervalEnd;
+      // Prefix the layer title with the root accordion name: "Root | Title"
+      if (dataset.root_title && data.layer_title) {
+        data.layer_title = `${dataset.root_title} | ${data.layer_title}`;
+      }
       const jsonWithParent = {
         id: dataset.id,
         south_bound_latitude: dataset.south_bound_latitude,
