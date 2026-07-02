@@ -280,6 +280,28 @@ const MyWorkbench = () => {
 
   return (
     <>
+      <style>{`
+        .workbench-accordion .card-header {
+          position: relative;
+        }
+        /* Header image at reduced opacity behind the content */
+        .workbench-accordion .card-header::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background-image: url(${withBasePath('/SPC_Header3.png')});
+          background-repeat: no-repeat;
+          background-position: center;
+          background-size: cover;
+          opacity: 0.4;
+          pointer-events: none;
+          z-index: 0;
+        }
+        .workbench-accordion .card-header > * {
+          position: relative;
+          z-index: 1;
+        }
+      `}</style>
       {mapLayer.length === 0 ? (
   <div className="workbench-accordion" style={{ padding: '20px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
           <div style={{ marginBottom: '150px' }}>
@@ -351,6 +373,7 @@ const MyWorkbench = () => {
             layer_Type = layer_Type.replace("_FORECAST", "");
 
             if (layer_Type === 'WMS' || layer_Type === 'WMS_UGRID' || layer_Type === 'WMS_HINDCAST') {
+              console.log(item)
               return (
                 <Accordion key={`${item.id}-${index}`} activeKey={isOpen ? item.id : null} style={{ paddingBottom: 4, border:0 }}>
                   <Card>
