@@ -26,6 +26,9 @@ const SideBar = ({ collapsed = false, onToggle = () => {}, onOpenMapData }) => {
   const isLoggedin = useAppSelector((state) => state.auth.isLoggedin);
   const isVisible = useAppSelector((state) => state.modal.isVisible);
   const country_idx = useAppSelector((state) => state.country.short_name);
+  // Used to skip redundant setBounds dispatches when the map is already
+  // initialized at the correct bounds from localStorage (via getInitialBounds).
+  const currentBounds = useAppSelector((state) => state.mapbox.bounds);
 
   const [regions, setRegions] = useState([]);
   const [selectedRegion, setSelectedRegion] = useState('1');
@@ -98,12 +101,17 @@ const SideBar = ({ collapsed = false, onToggle = () => {}, onOpenMapData }) => {
           if (exists) {
             setSelectedRegion(saved);
             dispatch(setShortName(saved));
-            dispatch(setBounds({
+            const savedBounds = {
               west: exists.west_bound_longitude,
               east: exists.east_bound_longitude,
               south: exists.south_bound_latitude,
               north: exists.north_bound_latitude,
-            }));
+            };
+            localStorage.setItem('selectedRegionBounds', JSON.stringify(savedBounds));
+            // Skip if Redux already has these bounds (pre-loaded from localStorage by getInitialBounds).
+            const cb = currentBounds;
+            const boundsUnchanged = cb && Math.abs(cb.west - savedBounds.west) <= 0.0001 && Math.abs(cb.east - savedBounds.east) <= 0.0001 && Math.abs(cb.south - savedBounds.south) <= 0.0001 && Math.abs(cb.north - savedBounds.north) <= 0.0001;
+            if (!boundsUnchanged) dispatch(setBounds(savedBounds));
           }
         } else if (isLoggedin) {
           // Fallback to login country when no saved selection exists
@@ -112,12 +120,16 @@ const SideBar = ({ collapsed = false, onToggle = () => {}, onOpenMapData }) => {
             const idStr = String(exists.id);
             setSelectedRegion(idStr);
             dispatch(setShortName(idStr));
-            dispatch(setBounds({
+            const loginBounds = {
               west: exists.west_bound_longitude,
               east: exists.east_bound_longitude,
               south: exists.south_bound_latitude,
               north: exists.north_bound_latitude,
-            }));
+            };
+            localStorage.setItem('selectedRegionBounds', JSON.stringify(loginBounds));
+            const cb2 = currentBounds;
+            const loginUnchanged = cb2 && Math.abs(cb2.west - loginBounds.west) <= 0.0001 && Math.abs(cb2.east - loginBounds.east) <= 0.0001 && Math.abs(cb2.south - loginBounds.south) <= 0.0001 && Math.abs(cb2.north - loginBounds.north) <= 0.0001;
+            if (!loginUnchanged) dispatch(setBounds(loginBounds));
           }
         }
       })
@@ -138,13 +150,16 @@ const SideBar = ({ collapsed = false, onToggle = () => {}, onOpenMapData }) => {
     } catch {}
     const region = regions.find(r => r.id === parseInt(regionId));
     if (region) {
-      dispatch(setBounds({
+      const regionBounds = {
         west: region.west_bound_longitude,
         east: region.east_bound_longitude,
         south: region.south_bound_latitude,
         north: region.north_bound_latitude,
-      }));
+      };
+      localStorage.setItem('selectedRegionBounds', JSON.stringify(regionBounds));
+      dispatch(setBounds(regionBounds));
     } else {
+      localStorage.removeItem('selectedRegionBounds');
       dispatch(setBounds(null));
     }
     e.target.blur();

@@ -2,9 +2,9 @@
 import React, { useEffect, useState } from 'react';
 import { Container, Card, Row, Col } from 'react-bootstrap';
 import { usePathname } from 'next/navigation';
-import Image from 'next/image';
 import Link from 'next/link';
 import styles from './page.module.css';
+import { withBasePath } from '@/app/lib/basePath';
 
 const Aboutus = () => {
   const pathname = usePathname();
@@ -120,10 +120,12 @@ const Aboutus = () => {
         color: isDarkMode ? 'white' : 'var(--foreground)'
       }}
     >
-      <div className="w-100 py-3" style={{ 
-        marginTop: 0, 
+      <div className="w-100 py-3" style={{
+        marginTop: 0,
         paddingTop: '1rem',
-        backgroundColor: isDarkMode ? '#2E2E32' : ''
+        backgroundColor: 'transparent',
+        position: 'relative',
+        zIndex: 1
       }}>
         <Container fluid>
           <h2
@@ -140,12 +142,14 @@ const Aboutus = () => {
       </div>
 
       <Container fluid className="mt-4 px-0" style={{
-        backgroundColor: isDarkMode ? '#2E2E32' : ''
+        backgroundColor: 'transparent',
+        position: 'relative',
+        zIndex: 1
       }}>
-        <div className="py-3 px-3" style={{ 
-          maxWidth: '1200px', 
+        <div className="py-3 px-3" style={{
+          maxWidth: '1200px',
           margin: '0 auto',
-          backgroundColor: isDarkMode ? '#2E2E32' : ''
+          backgroundColor: 'transparent'
         }}>
           {/* Intro Section */}
           <Card className="mb-4 shadow-sm" style={{
@@ -226,7 +230,7 @@ const Aboutus = () => {
                     }}>
                       <div className="d-flex">
                         <div style={{ width: '180px', height: '180px', position: 'relative', flexShrink: 0, background: 'white', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
-                          <Image src={donor.logo} alt={donor.name} fill style={{ objectFit: 'contain', padding: '8px' }} />
+                          <img src={withBasePath(donor.logo)} alt={donor.name} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
                         </div>
                         <div className="ms-4">
                           <h5 style={{ fontWeight: '600' }}>{donor.name}</h5>
@@ -268,7 +272,7 @@ const Aboutus = () => {
                     }}>
                       <div className="d-flex">
                         <div style={{ width: '200px', height: '200px', position: 'relative', flexShrink: 0, background: 'white', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
-                          <Image src={partner.logo} alt={partner.name} fill style={{ objectFit: 'contain', padding: '8px' }} />
+                          <img src={withBasePath(partner.logo)} alt={partner.name} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
                         </div>
                         <div className="ms-4">
                           <h5 style={{ fontWeight: '600' }}>{partner.name}</h5>
@@ -294,6 +298,23 @@ const Aboutus = () => {
           </div>
         </div>
       </Container>
+      <img
+        src={withBasePath('/SPCMotif.png')}
+        alt=""
+        aria-hidden="true"
+        className="spc-motif-watermark"
+        style={{
+          position: 'fixed',
+          left: -180,
+          bottom: -250,
+          opacity: 0.08,
+          width: 750,
+          maxWidth: 'none',
+          height: 'auto',
+          pointerEvents: 'none',
+          zIndex: 0,
+        }}
+      />
     </div>
   );
 };

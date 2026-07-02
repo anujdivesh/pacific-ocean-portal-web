@@ -1,13 +1,13 @@
-import L from "leaflet";
-import buildTileUrlFromCogParams, {
+import {
   parseCogParams,
   mergeParamsWithBounds,
-  buildParams
-} from "./cogParams";
+  buildParams,
+} from './cogParams';
+import { Z, uniqueId } from './maplibreLayers';
 
 /**
  * Expand a cogParamsString into base, params object, query string, and full URL.
- * Useful for logging/diagnostics.
+ * Useful for logging/diagnostics. (Unchanged from the Leaflet version.)
  */
 export function getCOGUrlParts(
   cogParamsString,
@@ -22,60 +22,68 @@ export function getCOGUrlParts(
 }
 
 /**
- * Create a Leaflet TileLayer from a COG dynamic tile API param string.
+ * Create a MapLibre raster source/layer from a COG dynamic tile API param string.
  *
- * Usage:
- *  const layer = addCOGTileLayer(map, cogParamsString, {
- *    extraParams: { url, variable, time }, // REQUIRED by your service
- *    enforceBounds: true,
- *    tileOptions: { opacity: 0.9 },
- *    onParams: (params) => console.log(params),
- *    onUrl: (url) => console.log(url)
- *  });
- *  layer.addTo(map);
+ * The param string already yields a full `{z}/{x}/{y}` tile URL template, so this
+ * is a plain XYZ raster source (no WMS bbox token needed).
  *
- * Options:
- *  - extraParams: merge-in URL params (e.g., { url, variable, time })
- *  - enforceBounds: boolean, when true adds lon_min/lon_max/lat_min/lat_max
- *  - tileOptions: Leaflet TileLayer options
- *  - onParams(params): callback for effective params object
- *  - onUrl(url): callback for the final URL template (with {z}/{x}/{y})
+ * @param {maplibregl.Map} map   - MapLibre map (must have `map.__mgr` = MapLayerManager).
+ * @param {string} cogParamsString
+ * @param {Object} opts - { extraParams, enforceBounds, tileOptions:{opacity,maxNativeZoom}, onParams, onUrl }
+ * @returns {Object} manager entry { sourceId, layerIds, remove() }.
  */
 export function addCOGTileLayer(
   map,
   cogParamsString,
   {
     extraParams = {},
-  enforceBounds = false,
+    enforceBounds = false,
     tileOptions = {},
     onParams,
-    onUrl
+    onUrl,
   } = {}
 ) {
-  const { url, params } = getCOGUrlParts(cogParamsString, extraParams, {
-    enforceBounds
-  });
+  const { url, params } = getCOGUrlParts(cogParamsString, extraParams, { enforceBounds });
 
-  if (typeof onParams === "function") {
-    try {
-      onParams(params);
-    } catch {}
+  if (typeof onParams === 'function') {
+    try { onParams(params); } catch {}
   }
-  if (typeof onUrl === "function") {
-    try {
-      onUrl(url);
-    } catch {}
+  if (typeof onUrl === 'function') {
+    try { onUrl(url); } catch {}
   }
 
-  const layer = L.tileLayer(url, {
-    tileSize: 256,
-    minZoom: 0,
-    maxZoom: 8,
-    crossOrigin: true,
-    ...tileOptions
+  const mgr = map.__mgr;
+  const datasetId = extraParams && extraParams.layer_id != null ? extraParams.layer_id : null;
+  const sourceId = uniqueId(`cog-${datasetId != null ? datasetId : 'x'}`);
+  const opacity = typeof tileOptions.opacity === 'number' ? tileOptions.opacity : 1;
+  // maxNativeZoom -> source maxzoom (MapLibre overzooms beyond it).
+  const maxzoom = typeof tileOptions.maxNativeZoom === 'number' ? tileOptions.maxNativeZoom : 8;
+
+  const entry = mgr.add({
+    sourceId,
+    source: {
+      type: 'raster',
+      tiles: [url],
+      tileSize: 256,
+      minzoom: 0,
+      maxzoom,
+    },
+    layers: [
+      {
+        id: sourceId,
+        type: 'raster',
+        source: sourceId,
+        paint: { 'raster-opacity': opacity },
+      },
+    ],
+    datasetId,
+    kind: 'cog',
+    layerName: (extraParams && extraParams.variable) || '',
+    group: Z.wms,
+    meta: { url },
   });
 
-  return layer;
+  return entry;
 }
 
 export default addCOGTileLayer;

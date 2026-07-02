@@ -1,6 +1,7 @@
-"use client" // client side rendering 
+"use client" // client side rendering
 import React, { useEffect, useState, useRef } from 'react';
-import 'leaflet/dist/leaflet.css';
+import 'maplibre-gl/dist/maplibre-gl.css';
+import { withBasePath } from '@/app/lib/basePath';
 import { useAppSelector, useAppDispatch } from '@/app/GlobalRedux/hooks';
 import { hideModal } from '@/app/GlobalRedux/Features/modal/modalSlice';
 import { setBounds, addMapLayer } from '@/app/GlobalRedux/Features/map/mapSlice';
@@ -23,8 +24,8 @@ const SmallMap = ({ currentDataset }) => {
   const mapContainer2 = useRef(null);
   const mapInstance = useRef(null);
   const current_dataset_ref = useRef(null);
-  const bboxLayerRef = useRef(null);
-  const LRef = useRef(null); // holds Leaflet module after dynamic import
+  const mlRef = useRef(null);          // holds maplibre-gl module after dynamic import
+  const latestDsRef = useRef(null);    // latest dataset_list for deferred (post-load) bbox draw
 
   // Warning helper
   const warnExists = () => {
@@ -44,28 +45,26 @@ const SmallMap = ({ currentDataset }) => {
       warnExists();
       return;
     }
-  setIsLoading(true);
+    setIsLoading(true);
     fetchData(currentDataset, currentDataset.layer_information, token)
       .finally(() => setIsLoading(false));
   };
 
-  // Dynamic Leaflet init + dataset bbox updates
+  // Dynamic MapLibre init + dataset bbox updates
   useEffect(() => {
     let cancelled = false;
+    latestDsRef.current = dataset_list;
     (async () => {
       if (typeof window === 'undefined') return;
-      if (!LRef.current) {
-        const mod = await import('leaflet');
+      if (!mlRef.current) {
+        const mod = await import('maplibre-gl');
         if (cancelled) return;
-        LRef.current = mod.default || mod;
+        mlRef.current = mod.default || mod;
       }
       if (!mapInstance.current && mapContainer2.current) {
-        if (mapContainer2.current._leaflet_id) delete mapContainer2.current._leaflet_id; // safety
         initMap();
       }
-      if (mapInstance.current) {
-        addOrUpdateBBox(dataset_list);
-      }
+      applyBBox(latestDsRef.current);
     })();
     return () => { cancelled = true; };
   }, [dataset_list, currentDataset, token]);
@@ -79,28 +78,37 @@ const SmallMap = ({ currentDataset }) => {
   }, []);
 
   // --- Helper functions ---
-  const addBBox = (map, bbox) => {
-    const L = LRef.current;
-    if (!L) return null;
-    const rect = L.rectangle(bbox, { color: '#FF5733', weight: 3, id: 1 }).addTo(map);
-    map.fitBounds(bbox);
-    return rect;
-  };
-
-  const addOrUpdateBBox = (ds) => {
-    if (!mapInstance.current || !ds) return;
+  // Draw / update the dataset bounding box and fit to it.
+  const applyBBox = (ds) => {
     const map = mapInstance.current;
-    // Remove previous bbox rectangle(s)
-    map.eachLayer(l => {
-      if (l?.options?.id === 1) map.removeLayer(l);
-    });
-    if (ds.has_bbox) {
-      current_dataset_ref.current = ds;
-      bboxLayerRef.current = addBBox(map, [
-        [ds.south_bound_latitude, ds.east_bound_longitude],
-        [ds.north_bound_latitude, ds.west_bound_longitude]
-      ]);
-    }
+    if (!map || !ds || !map.__ready) return; // load handler re-applies once ready
+
+    // Remove previous bbox
+    ['bbox-fill', 'bbox-line'].forEach((id) => { if (map.getLayer(id)) map.removeLayer(id); });
+    if (map.getSource('bbox')) map.removeSource('bbox');
+
+    if (!ds.has_bbox) return;
+    current_dataset_ref.current = ds;
+
+    const west = ds.west_bound_longitude;
+    const east = ds.east_bound_longitude;
+    const south = ds.south_bound_latitude;
+    const north = ds.north_bound_latitude;
+
+    const poly = {
+      type: 'Feature',
+      geometry: {
+        type: 'Polygon',
+        coordinates: [[[west, south], [east, south], [east, north], [west, north], [west, south]]],
+      },
+    };
+    map.addSource('bbox', { type: 'geojson', data: poly });
+    map.addLayer({ id: 'bbox-fill', type: 'fill', source: 'bbox', paint: { 'fill-color': '#FF5733', 'fill-opacity': 0.2 } });
+    map.addLayer({ id: 'bbox-line', type: 'line', source: 'bbox', paint: { 'line-color': '#FF5733', 'line-width': 3 } });
+
+    const W = Math.min(west, east), E = Math.max(west, east);
+    const S = Math.min(south, north), N = Math.max(south, north);
+    try { map.fitBounds([[W, S], [E, N]], { animate: false, padding: 20 }); } catch {}
   };
 
   const fetchData = async (dataset, id, tokenVal) => {
@@ -130,8 +138,8 @@ const SmallMap = ({ currentDataset }) => {
         north: dataset.north_bound_latitude
       };
       const inside = bounds && datasetBox.west >= bounds.west && datasetBox.east <= bounds.east && datasetBox.south >= bounds.south && datasetBox.north <= bounds.north;
-      
-  dispatch(addMapLayer(jsonWithParent));
+
+      dispatch(addMapLayer(jsonWithParent));
       if (short_name == 1 || inside) {
         dispatch(setBounds({
           west: dataset.west_bound_longitude,
@@ -140,25 +148,59 @@ const SmallMap = ({ currentDataset }) => {
           north: dataset.north_bound_latitude
         }));
       }
-  // Dismiss modal after layer added & bounds possibly updated
-  dispatch(hideModal());
+      // Dismiss modal after layer added & bounds possibly updated
+      dispatch(hideModal());
     } catch (e) {
       console.error('Error fetching data:', e);
     }
   };
 
   const initMap = () => {
-    const L = LRef.current;
-    if (!L || !mapContainer2.current) return;
-    mapInstance.current = L.map(mapContainer2.current, {
+    const maplibregl = mlRef.current;
+    if (!maplibregl || !mapContainer2.current) return;
+
+    const map = new maplibregl.Map({
+      container: mapContainer2.current,
+      style: { version: 8, sources: {}, layers: [] },
+      center: [179.3053, -8], // Leaflet center [-8, 179.3053] is [lat,lng]
       zoom: 2,
-      center: [-8, 179.3053],
-      attributionControl: false
+      attributionControl: false,
+      dragRotate: false,
+      pitchWithRotate: false,
+      // spc-osm sends no CORS headers, so route its tiles through the same-origin proxy.
+      transformRequest: (url, resourceType) => {
+        if ((resourceType === 'Tile' || resourceType === 'Image') && /^https?:\/\//i.test(url)
+          && url.includes('spc-osm.spc.int') && !url.includes('/api/proxy-tile')) {
+          return { url: `${window.location.origin}${withBasePath('/api/proxy-tile')}?url=${encodeURIComponent(url)}` };
+        }
+        return { url };
+      },
     });
-    mapInstance.current.attributionControl = L.control.attribution({
-      prefix: '<a href="https://www.spc.int/" target="_blank">SPC</a> | &copy; Pacific Community SPC'
-    }).addTo(mapInstance.current);
-    L.tileLayer('https://spc-osm.spc.int/tile/{z}/{x}/{y}.png', { detectRetina: true }).addTo(mapInstance.current);
+    mapInstance.current = map;
+    try { map.touchZoomRotate.disableRotation(); } catch {}
+    try { map.dragRotate.disable(); } catch {}
+
+    // Ignore harmless aborted-tile decode noise (see get_map.jsx).
+    map.on('error', (e) => {
+      const err = e && e.error;
+      const name = err && err.name;
+      const msg = (err && err.message) || '';
+      if (name === 'InvalidStateError' || name === 'AbortError' || msg.includes('no longer, usable') || msg.includes('aborted')) return;
+      console.error('SmallMap error:', err || e);
+    });
+
+    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-left');
+    map.addControl(new maplibregl.AttributionControl({
+      compact: false,
+      customAttribution: '<a href="https://www.spc.int/" target="_blank">SPC</a> | &copy; Pacific Community SPC',
+    }), 'bottom-right');
+
+    map.on('load', () => {
+      map.addSource('basemap', { type: 'raster', tiles: ['https://spc-osm.spc.int/tile/{z}/{x}/{y}.png'], tileSize: 256 });
+      map.addLayer({ id: 'basemap', type: 'raster', source: 'basemap' });
+      map.__ready = true;
+      applyBBox(latestDsRef.current);
+    });
   };
 
   // --- Render ---

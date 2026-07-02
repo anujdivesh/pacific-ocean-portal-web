@@ -31,9 +31,24 @@
   flex-direction: column;
 }
 
+/* Grid container: tight wrap layout for fixed-width cards */
+.cardGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+/* Each card slot — sized exactly to the card width on larger screens */
 .dashboardCardGap {
-  margin-bottom: 1.5rem; /* vertical gap */
-  margin-right: 2.5rem;  /* horizontal gap */
+  flex: 0 0 auto;
+  width: 240px;
+}
+
+/* On small screens, stretch cards full-width */
+@media (max-width: 575px) {
+  .dashboardCardGap {
+    width: 100%;
+  }
 }
 
 @media (max-width: 768px) {

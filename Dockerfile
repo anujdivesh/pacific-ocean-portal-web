@@ -24,6 +24,11 @@ COPY ./ ./
 RUN chmod -R 755 /usr/app && \
     chmod -R 755 /usr/app/public
 
+# Base path (subpath) support. NEXT_PUBLIC_BASE_PATH is inlined into the build,
+# so it must be set BEFORE `npm run build`. Empty = served at root "/".
+ARG NEXT_PUBLIC_BASE_PATH=""
+ENV NEXT_PUBLIC_BASE_PATH=$NEXT_PUBLIC_BASE_PATH
+
 # Build app
 RUN npm run build --omit-dev
 

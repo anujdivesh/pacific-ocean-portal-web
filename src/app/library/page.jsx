@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Form, Stack, Badge, Image, Spinner, Modal, Button } from 'react-bootstrap';
 import styles from './page.module.css';
+import { withBasePath } from '@/app/lib/basePath';
 
 const Library = () => {
   const [countryFilter, setCountryFilter] = useState('All');
@@ -708,8 +709,10 @@ const Library = () => {
       </Modal>
       
       <Container fluid className="py-4" style={{
-        backgroundColor: isDarkMode ? '#2E2E32' : '#FAFAFA',
-        color: isDarkMode ? 'white' : 'var(--foreground)'
+        backgroundColor: 'transparent',
+        color: isDarkMode ? 'white' : 'var(--foreground)',
+        position: 'relative',
+        zIndex: 1
       }}>
         <Row>
           <Col md={3} className="pe-4">
@@ -942,6 +945,23 @@ const Library = () => {
             </Col>
           </Row>
         </Container>
+      <img
+        src={withBasePath('/SPCMotif.png')}
+        alt=""
+        aria-hidden="true"
+        className="spc-motif-watermark"
+        style={{
+          position: 'fixed',
+          left: -180,
+          bottom: -250,
+          opacity: 0.08,
+          width: 750,
+          maxWidth: 'none',
+          height: 'auto',
+          pointerEvents: 'none',
+          zIndex: 0,
+        }}
+      />
       </div>
   );
 };

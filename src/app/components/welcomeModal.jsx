@@ -4,6 +4,7 @@ import { Modal, Button,Form } from 'react-bootstrap';
 //import '@/components/css/welcomemodal.css';
 import { useDispatch } from 'react-redux';
 import { setBaseMapLayer } from '@/app/GlobalRedux/Features/map/mapSlice';
+import { withBasePath } from '@/app/lib/basePath';
 const basemapOptions = [
   {
     key: "osm",
@@ -184,7 +185,7 @@ return (
                             aria-label={`Select ${opt.label} base map`}
                         >
                             <img
-                                src={opt.img}
+                                src={withBasePath(opt.img)}
                                 alt={opt.label}
                                 className="custom-basemap-img"
                             />
@@ -205,7 +206,7 @@ return (
             <div className="logos d-flex flex-wrap justify-content-center custom-org-logo">
                 <img
                     className="img-fluid"
-                    src={isDarkMode ? "/logos/SPC_white.png" : "/logos/SPC.png"}
+                    src={withBasePath(isDarkMode ? "/logos/SPC_white.png" : "/logos/SPC.png")}
                     alt="supported-services"
                     width={isDarkMode ? "25%" : "17%"}
                     height={isDarkMode ? "10%" : "10%"}

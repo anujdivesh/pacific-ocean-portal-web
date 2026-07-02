@@ -1,6 +1,7 @@
 'use client';
 import React, { useEffect, useRef, useState } from 'react';
 import { useAppSelector } from '@/app/GlobalRedux/hooks';
+import { withBasePath } from '@/app/lib/basePath';
 
 function Download({ height }) {
   const mapLayer = useAppSelector((state) => state.mapbox.layers);
@@ -113,7 +114,7 @@ function Download({ height }) {
       </div>
       <div style={{ display: 'flex', marginTop: '20px' }}>
         <img
-          src="/data_logos.png"
+          src={withBasePath("/data_logos.png")}
           alt="Logo 1"
           style={{
             marginTop: '-10px',

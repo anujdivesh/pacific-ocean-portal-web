@@ -4,6 +4,7 @@ import { Modal, Button } from 'react-bootstrap';
 import { Spinner } from 'react-bootstrap';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { get_url } from './urls';
+import { withBasePath } from '@/app/lib/basePath';
 import { saveAs } from 'file-saver';
 
 
@@ -50,184 +51,6 @@ function DynamicImage({ height }) {
 
     return dateArray;
   }
-  const fetchAndPlotGeoJSON = async (url,id) => {
-      try {
-          // First remove any existing cluster layer
-      if (mapRef.current && isMapInitialized.current) {
-        try {
-          mapRef.current.eachLayer(layer => {
-              if (layer instanceof L.MarkerClusterGroup) {
-                  mapRef.current.removeLayer(layer);
-              }
-          });
-        } catch (error) {
-        //  console.error('Error removing existing cluster layers:', error);
-        }
-      }
-      
-          // Create marker cluster group
-          const markerClusterGroup = L.markerClusterGroup({
-              maxClusterRadius: 35,
-              spiderfyOnMaxZoom: true,
-              showCoverageOnHover: true,
-              zoomToBoundsOnClick: true,
-              disableClusteringAtZoom: 14,
-              chunkedLoading: true,
-              chunkInterval: 100,
-              iconCreateFunction: function(cluster) {
-                  const count = cluster.getChildCount();
-                  return L.divIcon({
-                      html: `<div style="background-color: #C7D444; 
-                             color: white;                                
-                             border-radius: 50%; 
-                             width: 40px; 
-                             height: 40px; 
-                             display: flex; 
-                             align-items: center; 
-                             justify-content: center; 
-                             font-weight: bold;
-                             border: 2px solid white;
-                             box-shadow: 0 0 5px rgba(0,0,0,0.3);">${count}</div>`,
-                      className: 'marker-cluster-custom',
-                      iconSize: L.point(40, 40)
-                  });
-              }
-          });
-      
-          // Fetch the GeoJSON data
-          const response = await fetch(url);
-          const geojsonData = await response.json();
-      
-          // Normalize longitude values to the range [-180, 180]
-          const normalizeLongitude = (lon) => {
-              while (lon > 180) lon -= 360;
-              while (lon < -180) lon += 360;
-              return lon;
-          };
-      
-          // Process the GeoJSON data to handle points near the dateline
-          const processGeoJSON = (geojson) => {
-              return {
-                  ...geojson,
-                  features: geojson.features.map(feature => {
-                      const geometry = feature.geometry;
-                      if (geometry.type === 'Point') {
-                          const [lon, lat] = geometry.coordinates;
-                          const normalizedLon = normalizeLongitude(lon);
-      
-                          // If the point is near the dateline, create a duplicate on the other side
-                          if (Math.abs(normalizedLon) > 150) {
-                              return [
-                                  {
-                                      ...feature,
-                                      geometry: {
-                                          ...geometry,
-                                          coordinates: [normalizedLon, lat],
-                                      },
-                                  },
-                                  {
-                                      ...feature,
-                                      geometry: {
-                                          ...geometry,
-                                          coordinates: [normalizedLon + 360, lat],
-                                      },
-                                  },
-                              ];
-                          }
-      
-                          return {
-                              ...feature,
-                              geometry: {
-                                  ...geometry,
-                                  coordinates: [normalizedLon, lat],
-                              },
-                          };
-                      }
-                      return feature;
-                  }).flat(),
-              };
-          };
-      
-          // Process the GeoJSON data
-          const processedGeoJSON = processGeoJSON(geojsonData);
-      
-          // Create GeoJSON layer with markers
-          const geoJsonLayer = L.geoJSON(processedGeoJSON, {
-              id: "tide_gauge",
-              pointToLayer: function(feature, latlng) {
-                if (!latlng || typeof latlng.lat !== 'number' || typeof latlng.lng !== 'number') {
-                //  console.warn('Invalid latlng:', latlng, feature);
-                  return null;
-                }
-              
-                const dispersion = 0.0005;
-                const dispersedLatLng = L.latLng(
-                  latlng.lat + (Math.random() * dispersion * 2 - dispersion),
-                  latlng.lng + (Math.random() * dispersion * 2 - dispersion)
-                );
-      
-                  const marker = L.marker(dispersedLatLng, { icon: blueIcon });
-      
-                  // Create popup content
-                  const popupContent = `
-                      ${feature.properties.station_na || "No name provided"}
-                  `;
-      
-                  // Add popup to the marker
-                  marker.bindPopup(popupContent);
-      
-                  // Attach a custom event handler to the popup's link
-                  marker.on('popupopen', () => {
-                      const link = document.querySelector('.popup-link');
-                      if (link) {
-                          link.addEventListener('click', (e) => {
-                              e.preventDefault();
-                              // Dispatch the action when the link is clicked
-                          });
-                      }
-                  });
-      
-                                     marker.on('click', () => {
-                        // COMMENTED OUT - Data availability checking
-                        // setIsCheckingData(true);
-                        // try {
-                          const station = feature.properties.station_id;
-                          const x = null;
-                          const y = null;
-                          const sizex = null;
-                          const sizey = null;
-                          const bbox = null;
-                          // const isDataAvailable = await checkDataAvailability('WFS', station, id);
-                          // if (isDataAvailable) {
-                            // Set data limit with fallback to default if not provided
-                            const dataLimit = feature.properties.data_limit || 100;
-                         //   console.log("dataLimit", dataLimit);
-                            dispatch(setDataLimit(dataLimit)); 
-                            dispatch(setCoordinates({ x, y, sizex, sizey, bbox, station }));
-                            // Use the active layer id to open the correct bottom canvas
-                            dispatch(showoffCanvas(id));
-                          // } else {
-                          //   showNoDataAlert(`No data available for ${station}`);
-                          // }
-                        // } catch (error) {
-                        //   showNoDataAlert(`Error checking data for ${feature.properties.station_id}`);
-                        // } finally {
-                        //   setIsCheckingData(false);
-                        // }
-                    });
-      
-                  return marker;
-              }
-          });
-      
-          // Add markers to cluster group and then to map
-          markerClusterGroup.addLayer(geoJsonLayer);
-          mapRef.current.addLayer(markerClusterGroup);
-      
-      } catch (error) {
-      //    console.error('Error fetching GeoJSON data:', error);
-      }
-    };
 
   const savedRegion = localStorage.getItem('selectedRegion');
 
@@ -874,7 +697,7 @@ const formatShortTimestamp = (timestamp, currentIndex) => {
   const handleDownload = async () => {
     const mapImageUrl = images[currentIndex];
     try {
-      const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(mapImageUrl)}`;
+      const proxyUrl = `${withBasePath('/api/proxy-image')}?url=${encodeURIComponent(mapImageUrl)}`;
       const response = await fetch(proxyUrl);
       if (!response.ok) throw new Error('Network response was not ok');
       const blob = await response.blob();

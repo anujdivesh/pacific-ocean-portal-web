@@ -5,6 +5,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        # Subpath for this deploy. Inlined at build time. Use "" to serve at root.
+        NEXT_PUBLIC_BASE_PATH: /oceanportal
     env_file:
       - .env
     ports:
@@ -13,4 +16,5 @@ services:
       - NODE_ENV=production
       - SESSION_SECRET=OCEANS_PACIFIC_COMMUNITY
       - NEXT_PUBLIC_BASE_URL=https://oceanportal2.spc.int
+      - NEXT_PUBLIC_BASE_PATH=/oceanportal
     restart: unless-stopped

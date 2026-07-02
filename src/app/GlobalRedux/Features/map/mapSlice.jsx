@@ -2,12 +2,30 @@ import { createSlice } from '@reduxjs/toolkit';
 // Removed Leaflet import to avoid SSR (window is not defined) errors. Any Leaflet usage should live in client components.
 import { get_url } from '@/app/components/urls';
 
+// Default Pacific-wide bounds — matches the "Pacific Islands" region (id=1).
+// Used when no region has been selected yet (first-ever visit).
+const DEFAULT_BOUNDS = { west: 100, east: 300, south: -45, north: 45 };
+
+// Read cached bounds from localStorage so the map can initialize at the correct
+// viewport immediately, avoiding the visible "jump" that occurs when the sidebar
+// fetches regions asynchronously and dispatches setBounds after mount.
+// Falls back to DEFAULT_BOUNDS so the map ALWAYS opens from region bounds,
+// never from an arbitrary center/zoom.
+function getInitialBounds() {
+  if (typeof window === 'undefined') return DEFAULT_BOUNDS;
+  try {
+    const cached = localStorage.getItem('selectedRegionBounds');
+    if (cached) return JSON.parse(cached);
+  } catch {}
+  return DEFAULT_BOUNDS;
+}
+
 const mapSlice = createSlice({
   name: 'mapbox',
   initialState: {
     zoom: 4,
     center: [-8, 179.3053],
-    bounds:null,
+    bounds: getInitialBounds(),
     layers: [],
     rerenderKey: 0,
     basemap: {
@@ -19,20 +37,14 @@ const mapSlice = createSlice({
     },
     eezoverlay: {
       url: "https://ocean-plotter.spc.int/plotter/proxy?url=https://geonode.pacificdata.org/geoserver/gwc/service/tms/1.0.0/geonode:global_eez_200nm@EPSG:3857@pbf/{z}/{x}/{-y}.png",
-      //url: 'https://geonode.pacificdata.org/geoserver/geonode/global_eez_200nm/ows',
-      //url: get_url('geowebcache')+'/eez/geonode/global_eez_200nm/wms',
       layer: 'geonode:global_eez_200nm',
     },
     coastlineoverlay: {
-      //url: 'https://geonode.pacificdata.org/geoserver/gwc/service/tms/1.0.0/geonode:pac_coastline@EPSG:3857@pbf/{z}/{x}/{-y}.png',
       url:"https://ocean-plotter.spc.int/plotter/proxy?url=https://geonode.pacificdata.org/geoserver/gwc/service/tms/1.0.0/geonode:pac_coastline@EPSG:3857@pbf/{z}/{x}/{-y}.png",
-      //url:"https://geonode.pacificdata.org/geoserver/geonode/pac_coastline/ows",
-      //url: get_url('geowebcache')+'/coastline/geonode/pac_coastline/ows',
       layer: 'geonode:pacific_coastlines',
     },
     citynamesoverlay: {
       url:"https://ocean-plotter.spc.int/plotter/proxy?url=https://geonode.pacificdata.org/geoserver/gwc/service/tms/1.0.0/geonode:pacific_names@EPSG:3857@pbf/{z}/{x}/{-y}.png",
-      //url: 'https://geonode.pacificdata.org/geoserver/geonode/pac_city_names/ows',
       layer: 'geonode:pacific_names',
     },
     /*
@@ -135,24 +147,19 @@ const mapSlice = createSlice({
       }
     },
     selectStation(state, action) {
-      const station = action.payload;
-      const latlng = station.marker.getLatLng();
-      state.center = [latlng.lat, latlng.lng];
+      // payload: { lat, lng } — pass coordinates directly, not a Leaflet marker
+      const { lat, lng } = action.payload;
+      state.center = [lat, lng];
       state.zoom = 12;
 
       // Set bounds around the station
       const buffer = 0.1; // 0.1 degree buffer
       state.bounds = {
-        west: latlng.lng - buffer,
-        east: latlng.lng + buffer,
-        south: latlng.lat - buffer,
-        north: latlng.lat + buffer,
+        west: lng - buffer,
+        east: lng + buffer,
+        south: lat - buffer,
+        north: lat + buffer,
       };
-
-      // Open the marker popup to highlight it
-      if (station.marker.openPopup) {
-        station.marker.openPopup();
-      }
     }
   },
 });

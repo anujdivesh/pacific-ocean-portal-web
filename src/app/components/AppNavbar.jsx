@@ -10,6 +10,7 @@ import { login, logout as logoutServer } from "@/app/login/action";
 import { useAppSelector, useAppDispatch } from "@/app/GlobalRedux/hooks";
 import { login as loginAction, logout as logoutAction, updateCountry, updateToken } from "@/app/GlobalRedux/Features/auth/authSlice";
 import { setShortName as setCountryShort } from "@/app/GlobalRedux/Features/country/countrySlice";
+import { withBasePath } from "@/app/lib/basePath";
 
 export default function AppNavbar({ logoutButtonSize = 'sm' }) {
   const [dark, setDark] = useState(false);
@@ -204,7 +205,7 @@ export default function AppNavbar({ logoutButtonSize = 'sm' }) {
   const getCountryFlag = (id) => {
     const country = countriesxxx.find((c) => c.id === Number(id));
     if (!country || country.short_name === 'PAC') return null;
-    return `/flags/${country.short_name}.png`;
+    return withBasePath(`/flags/${country.short_name}.png`);
   };
 
   // Decide which flag to show after mount to avoid SSR/CSR mismatch
@@ -246,7 +247,21 @@ export default function AppNavbar({ logoutButtonSize = 'sm' }) {
         expanded={expanded}
         onToggle={setExpanded}
       >
-        <Container fluid className={styles.navbarContainer}>
+        <span
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            backgroundImage: `url(${withBasePath('/SPC_Header3.png')})`,
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'center',
+            backgroundSize: 'cover',
+            opacity: 0.4,
+            pointerEvents: 'none',
+            zIndex: 0,
+          }}
+        />
+        <Container fluid className={styles.navbarContainer} style={{ position: 'relative', zIndex: 1 }}>
           <div className={styles.navbarFlex}>
             <div className={styles.brandWrapper}>
               <Navbar.Brand as={Link} href="/" className={styles.navbarBrand}>
@@ -254,7 +269,7 @@ export default function AppNavbar({ logoutButtonSize = 'sm' }) {
                   <span className={styles.flagContainer}>
                     {showFranceFlag && (
                       <img
-                        src="/flags/FRA.png"
+                        src={withBasePath("/flags/FRA.png")}
                         className={`${styles.flagImage2} ${styles.flagImagePrefix}`}
                         onError={(e) => {
                           e.currentTarget.style.display = "none";
@@ -266,9 +281,22 @@ export default function AppNavbar({ logoutButtonSize = 'sm' }) {
                   </span>
                 )}
                 <span className={styles.logoContainer}>
-                  <img
-                    src="/COSPPaC_white_crop2.png"
+                  <span
                     className={styles.logoImage}
+                    role="img"
+                    aria-label="Pacific Ocean Portal logo"
+                    style={{
+                      backgroundColor: dark ? '#5FA4FA' : '#0065f8',
+                      filter: 'none',
+                      WebkitMaskImage: `url(${withBasePath("/COSPPaC_white_crop2.png")})`,
+                      maskImage: `url(${withBasePath("/COSPPaC_white_crop2.png")})`,
+                      WebkitMaskRepeat: 'no-repeat',
+                      maskRepeat: 'no-repeat',
+                      WebkitMaskPosition: 'center',
+                      maskPosition: 'center',
+                      WebkitMaskSize: 'contain',
+                      maskSize: 'contain',
+                    }}
                   />
                 </span>
                 <span 

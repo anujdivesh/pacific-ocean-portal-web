@@ -4,6 +4,7 @@ import { Modal, Row, Col, Spinner } from 'react-bootstrap';
 import MyAccordion from './accordion';
 import AccordionMetadata from './accordion_metadata';
 import { get_url } from './urls';
+import { withBasePath } from '@/app/lib/basePath';
 import { useAppSelector } from "@/app/GlobalRedux/hooks";
 import { FaRegCircle, FaDotCircle } from 'react-icons/fa';
 //import '@/components/css/modal.css'; // Import your CSS file
@@ -41,7 +42,7 @@ const ExploreModal = ({ show, onClose, title, bodyContent }) => {
   useEffect(() => {
     const fetchSession = async () => {
       try {
-        const response = await fetch("/api/session");
+        const response = await fetch(withBasePath("/api/session"));
         const data = await response.json();
         setCountry(data.countryId)
         setUserId(data.userId); // Set userId when the session is fetched

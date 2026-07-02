@@ -1,7 +1,7 @@
 'use client';
 import React, { useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import maplibregl from 'maplibre-gl';
+import 'maplibre-gl/dist/maplibre-gl.css';
 
 // Improved longitude normalization
 const normalizeLongitude = (lon) => {
@@ -13,8 +13,8 @@ const normalizeLongitude = (lon) => {
 const getAdjustedCoordinates = (coordinates) => {
   const [lon, lat] = coordinates;
   const normalizedLon = normalizeLongitude(lon);
-  
-  // If the point is near the dateline (within 30 degrees), 
+
+  // If the point is near the dateline (within 30 degrees),
   // we'll create two points - one on each side
   if (Math.abs(normalizedLon) > 150) {
     return [
@@ -25,145 +25,179 @@ const getAdjustedCoordinates = (coordinates) => {
   return [[normalizedLon, lat]];
 };
 
-// Create blue marker icon for unselected buoys
-const createBlueMarkerIcon = () => {
-  return L.icon({
-    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
-    iconRetinaUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
-    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41]
-  });
-};
-
-// Create green marker icon for selected buoys
-const createGreenMarkerIcon = () => {
-  return L.icon({
-    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
-    iconRetinaUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
-    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41]
-  });
-};
+const BLUE_ICON_URL = 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png';
+const GREEN_ICON_URL = 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png';
+const SOURCE_ID = 'buoys';
+const LAYER_ID = 'buoys-markers';
 
 const RealtimeSearchMap = forwardRef(({ buoyOptions, selectedStations }, ref) => {
   const mapRef = useRef(null);
-  const markersRef = useRef([]);
-  const layerGroupRef = useRef(null);
+  const readyRef = useRef(false);
+  const buoysRef = useRef(buoyOptions);
+  const selectedRef = useRef(selectedStations);
+  const popupRef = useRef(null);
 
   useImperativeHandle(ref, () => ({
     getMap: () => mapRef.current
   }));
 
+  // Build a GeoJSON FeatureCollection from the current buoys + selection.
+  const buildFC = () => {
+    const buoys = buoysRef.current || [];
+    const selected = selectedRef.current || [];
+    const features = [];
+    buoys.forEach((buoy) => {
+      if (!buoy.coordinates) return;
+      const isSelected = selected.includes(buoy.spotter_id);
+      getAdjustedCoordinates(buoy.coordinates).forEach(([lon, lat]) => {
+        features.push({
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [lon, lat] },
+          properties: {
+            buoyId: buoy.spotter_id,
+            spotter_id: buoy.spotter_id,
+            country_co: buoy.country_co || 'Unknown location',
+            is_active: !!buoy.is_active,
+            latest_date: buoy.latest_date || 'Unknown',
+            selected: isSelected,
+            lat,
+            lon,
+          },
+        });
+      });
+    });
+    return { type: 'FeatureCollection', features };
+  };
+
+  const refreshData = () => {
+    const map = mapRef.current;
+    if (!map || !readyRef.current) return;
+    const src = map.getSource(SOURCE_ID);
+    if (src) src.setData(buildFC());
+  };
+
+  // Init map once
   useEffect(() => {
-    // Initialize map
-    const map = L.map('realtime-search-map', {
-      zoomControl: true,
-      center: [-15, 160],
-      zoom: 3
+    if (typeof window === 'undefined') return;
+
+    const map = new maplibregl.Map({
+      container: 'realtime-search-map',
+      style: {
+        version: 8,
+        sources: {
+          osm: {
+            type: 'raster',
+            // MapLibre has no {s} token: expand OSM subdomains explicitly.
+            tiles: ['a', 'b', 'c'].map((s) => `https://${s}.tile.openstreetmap.org/{z}/{x}/{y}.png`),
+            tileSize: 256,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+          },
+        },
+        layers: [{ id: 'osm', type: 'raster', source: 'osm' }],
+      },
+      center: [160, -15], // Leaflet center [-15, 160] is [lat,lng]
+      zoom: 3,
+      dragRotate: false,
+      pitchWithRotate: false,
+    });
+    mapRef.current = map;
+    try { map.touchZoomRotate.disableRotation(); } catch {}
+    try { map.dragRotate.disable(); } catch {}
+    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-left');
+
+    // Ignore harmless aborted-tile decode noise.
+    map.on('error', (e) => {
+      const err = e && e.error;
+      const name = err && err.name;
+      const msg = (err && err.message) || '';
+      if (name === 'InvalidStateError' || name === 'AbortError' || msg.includes('no longer, usable') || msg.includes('aborted')) return;
+      console.error('RealtimeSearchMap error:', err || e);
     });
 
-    // Add tile layer
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    }).addTo(map);
+    popupRef.current = new maplibregl.Popup({ closeButton: true, closeOnClick: true, offset: 24 });
 
-    layerGroupRef.current = L.layerGroup().addTo(map);
-    mapRef.current = map;
+    const loadIcon = async (name, url) => {
+      if (map.hasImage(name)) return;
+      try {
+        const r = await map.loadImage(url);
+        if (r && r.data && !map.hasImage(name)) map.addImage(name, r.data);
+      } catch (e) { /* ignore */ }
+    };
 
-    const handleResize = () => map.invalidateSize();
-    window.addEventListener('resize', handleResize);
+    map.on('load', async () => {
+      await Promise.all([loadIcon('buoy-blue', BLUE_ICON_URL), loadIcon('buoy-green', GREEN_ICON_URL)]);
+
+      map.addSource(SOURCE_ID, { type: 'geojson', data: buildFC() });
+      map.addLayer({
+        id: LAYER_ID,
+        type: 'symbol',
+        source: SOURCE_ID,
+        layout: {
+          'icon-image': ['case', ['get', 'selected'], 'buoy-green', 'buoy-blue'],
+          'icon-size': 1,
+          'icon-anchor': 'bottom',
+          'icon-allow-overlap': true,
+          'symbol-sort-key': ['case', ['get', 'selected'], 0, 1], // selected drawn on top
+        },
+        paint: {
+          'icon-opacity': ['case', ['get', 'selected'], 1, 0.8],
+        },
+      });
+
+      map.on('click', LAYER_ID, (e) => {
+        const f = e.features && e.features[0];
+        if (!f) return;
+        const p = f.properties;
+        const lat = Number(p.lat);
+        const lon = Number(p.lon);
+        const html = `
+          <div>
+            <strong>${p.spotter_id}</strong><br>
+            <small>${p.country_co || 'Unknown location'}</small><br>
+            Status: <b>${(p.is_active === true || p.is_active === 'true') ? 'Active' : 'Inactive'}</b><br>
+            Last data: ${p.latest_date || 'Unknown'}<br>
+            Coordinates: ${lat.toFixed(4)}°N, ${lon.toFixed(4)}°E
+          </div>
+        `;
+        popupRef.current.setLngLat(f.geometry.coordinates).setHTML(html).addTo(map);
+      });
+      map.on('mouseenter', LAYER_ID, () => { map.getCanvas().style.cursor = 'pointer'; });
+      map.on('mouseleave', LAYER_ID, () => { map.getCanvas().style.cursor = ''; });
+
+      readyRef.current = true;
+      refreshData();
+    });
 
     return () => {
-      window.removeEventListener('resize', handleResize);
-      map.remove();
+      readyRef.current = false;
+      try { map.remove(); } catch {}
+      mapRef.current = null;
     };
   }, []);
 
+  // Rebuild markers when the buoy set changes
   useEffect(() => {
-    if (!mapRef.current || !buoyOptions.length) return;
-
-    // Clear existing markers
-    layerGroupRef.current.clearLayers();
-    markersRef.current = [];
-
-    buoyOptions.forEach(buoy => {
-      if (!buoy.coordinates) return;
-
-      // Get adjusted coordinates (may return multiple points for dateline crossing)
-      const adjustedCoords = getAdjustedCoordinates(buoy.coordinates);
-      
-      adjustedCoords.forEach(([lon, lat]) => {
-        const isSelected = selectedStations.includes(buoy.spotter_id);
-        
-        const marker = L.marker([lat, lon], {
-          icon: isSelected ? createGreenMarkerIcon() : createBlueMarkerIcon(),
-          opacity: isSelected ? 1 : 0.8,
-          zIndexOffset: isSelected ? 1000 : 0,
-          buoyId: buoy.spotter_id
-        })
-        .bindPopup(`
-          <div>
-            <strong>${buoy.spotter_id}</strong><br>
-            <small>${buoy.country_co || 'Unknown location'}</small><br>
-            Status: <b>${buoy.is_active ? 'Active' : 'Inactive'}</b><br>
-            Last data: ${buoy.latest_date || 'Unknown'}<br>
-            Coordinates: ${lat.toFixed(4)}°N, ${lon.toFixed(4)}°E
-          </div>
-        `)
-        .addTo(layerGroupRef.current);
-
-        markersRef.current.push(marker);
-      });
-    });
-
+    buoysRef.current = buoyOptions;
+    refreshData();
   }, [buoyOptions]);
 
+  // Update selection styling when the selected stations change
   useEffect(() => {
-    if (!mapRef.current || markersRef.current.length === 0) return;
+    selectedRef.current = selectedStations;
+    refreshData();
 
-    // Update marker appearance based on selection
-    markersRef.current.forEach(marker => {
-      const buoyId = marker.options.buoyId;
-      const isSelected = selectedStations.includes(buoyId);
-      
-      // Change both icon and opacity
-      marker.setIcon(isSelected ? createGreenMarkerIcon() : createBlueMarkerIcon());
-      marker.setOpacity(isSelected ? 1 : 0.8);
-      marker.setZIndexOffset(isSelected ? 1000 : 0);
-    });
-
-    // Fit bounds to selected stations if any
-    if (selectedStations.length > 0) {
-      const selectedCoords = [];
-      
-      markersRef.current.forEach(marker => {
-        if (selectedStations.includes(marker.options.buoyId)) {
-          selectedCoords.push(marker.getLatLng());
-        }
-      });
-
-      if (selectedCoords.length > 0) {
-        const bounds = L.latLngBounds(selectedCoords);
-       // mapRef.current.fitBounds(bounds, { padding: [50, 50] });
-      }
-    }
-
+    // NOTE: fitBounds to selected stations was disabled in the original; kept off.
+    // if (selectedStations.length > 0) { ... map.fitBounds(...) }
   }, [selectedStations]);
 
   return (
-    <div 
-      id="realtime-search-map" 
-      style={{ 
-        height: '100%', 
+    <div
+      id="realtime-search-map"
+      style={{
+        height: '100%',
         width: '100%',
         borderRadius: '0.25rem'
-      }} 
+      }}
     />
   );
 });

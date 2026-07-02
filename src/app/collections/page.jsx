@@ -3,16 +3,19 @@
 import React, { useEffect, useState } from 'react';
 import DashboardInfoModal from './DashboardInfoModal';
 import styles from './dashboardCard.module.css';
-import { Container, Button, Form, InputGroup } from 'react-bootstrap';
+import { Container, Button, Form, InputGroup, Nav } from 'react-bootstrap';
 import { FaSearch } from 'react-icons/fa';
 import { useAppSelector } from '@/app/GlobalRedux/hooks';
 import { get_url } from '../components/urls';
+import { withBasePath } from '@/app/lib/basePath';
 import Link from 'next/link';
 import { FaInfoCircle } from "react-icons/fa";
 import { ImInfo } from "react-icons/im";
 
 function Collections() {
-    const [projects, setProjects] = useState([]);
+    const [regionalProjects, setRegionalProjects] = useState([]);
+    const [nationalProjects, setNationalProjects] = useState([]);
+    const [activeTab, setActiveTab] = useState('regional');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [search, setSearch] = useState('');
@@ -73,10 +76,11 @@ function Collections() {
                 const publicRes = await fetch(publicUrl);
                 if (!publicRes.ok) throw new Error('Failed to fetch public dashboards');
                 const publicDashboards = await publicRes.json();
+                setRegionalProjects(publicDashboards);
 
                 let countryDashboards = [];
                 if (isLoggedin && country) {
-                    
+
                     const countryUrl = get_url('root-path') + `/middleware/api/widget/?format=json&country_id=${country}`;
                     const headers = token ? { Authorization: `Bearer ${token}` } : {};
                     const countryRes = await fetch(countryUrl, { headers });
@@ -84,9 +88,9 @@ function Collections() {
                     countryDashboards = await countryRes.json();
                 }
 
-                const dashboardsById = {};
-                [...publicDashboards, ...countryDashboards].forEach(d => { dashboardsById[d.id] = d; });
-                setProjects(Object.values(dashboardsById));
+                // National dashboards are the extra country-specific ones not already in the public/regional set
+                const publicIds = new Set(publicDashboards.map(d => d.id));
+                setNationalProjects(countryDashboards.filter(d => !publicIds.has(d.id)));
             } catch (err) {
                 setError(err.message || 'Unknown error');
             } finally {
@@ -97,7 +101,13 @@ function Collections() {
         fetchDashboards();
     }, [token, country, isLoggedin]);
 
-    const filteredProjects = projects.filter(card =>
+    // Default to the National tab when the user is logged in, Regional otherwise
+    useEffect(() => {
+        setActiveTab(isLoggedin ? 'national' : 'regional');
+    }, [isLoggedin]);
+
+    const activeProjects = activeTab === 'national' ? nationalProjects : regionalProjects;
+    const filteredProjects = activeProjects.filter(card =>
         card.display_title && card.display_title.toLowerCase().includes(search.toLowerCase())
     );
 
@@ -159,28 +169,56 @@ function Collections() {
       color: isDarkMode ? 'white' : 'inherit'
     }}>
       <main className="py-4" style={{
-        backgroundColor: isDarkMode ? '#2E2E32' : '#FAFAFA',
+        backgroundColor: 'transparent',
         color: isDarkMode ? 'white' : 'inherit',
-        minHeight: '100%'
+        minHeight: '100%',
+        position: 'relative',
+        zIndex: 1
       }}>
         <Container>
           <div className="mb-5">
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '1.5rem', justifyContent: 'space-between', flexWrap: 'wrap' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                <Link href="/" style={{ display: 'inline-block', textDecoration: 'none' }}>
-                  {/* Logo placeholder */}
-                </Link>
-                <h1 className="display-9 mb-0">Dashboard Collections</h1>
-              </div>
-              <div style={{ fontSize: '1rem', whiteSpace: 'nowrap' }}>
-                Become a contributor{' '}
-                <a href="https://github.com/anujdivesh/ocean-plugin/blob/main/plugin/site1/README.md" target="_blank" rel="noopener noreferrer" style={{ color: '#4a6bff', textDecoration: 'underline', fontWeight: 500 }}>
-                  Learn how &rarr;
-                </a>
-              </div>
-            </div>
-            <div className="d-flex justify-content-center">
-              <Form className="mt-3" autoComplete="off" onSubmit={e => e.preventDefault()} style={{ width: '100%' }}>
+              <Nav
+                variant="tabs"
+                activeKey={activeTab}
+                onSelect={(k) => setActiveTab(k || 'regional')}
+                className="flex-grow-1"
+                style={{ borderBottomColor: isDarkMode ? '#4E5762' : undefined }}
+              >
+                <Nav.Item>
+                  <Nav.Link
+                    eventKey="regional"
+                    style={{
+                      color: activeTab === 'regional'
+                        ? (isDarkMode ? '#fff' : '#1e293b')
+                        : (isDarkMode ? '#cbd5e1' : '#64748b'),
+                      backgroundColor: activeTab === 'regional' ? (isDarkMode ? '#3F4853' : '#fff') : 'transparent',
+                      borderColor: activeTab === 'regional' && isDarkMode ? '#4E5762 #4E5762 #3F4853' : undefined,
+                      fontWeight: 600,
+                    }}
+                  >
+                    Regional Dashboards{' '}
+                    <span className="badge rounded-pill bg-primary ms-1">{regionalProjects.length}</span>
+                  </Nav.Link>
+                </Nav.Item>
+                <Nav.Item>
+                  <Nav.Link
+                    eventKey="national"
+                    style={{
+                      color: activeTab === 'national'
+                        ? (isDarkMode ? '#fff' : '#1e293b')
+                        : (isDarkMode ? '#cbd5e1' : '#64748b'),
+                      backgroundColor: activeTab === 'national' ? (isDarkMode ? '#3F4853' : '#fff') : 'transparent',
+                      borderColor: activeTab === 'national' && isDarkMode ? '#4E5762 #4E5762 #3F4853' : undefined,
+                      fontWeight: 600,
+                    }}
+                  >
+                    National Dashboards{' '}
+                    <span className="badge rounded-pill bg-primary ms-1">{nationalProjects.length}</span>
+                  </Nav.Link>
+                </Nav.Item>
+              </Nav>
+              <Form autoComplete="off" onSubmit={e => e.preventDefault()} style={{ flex: '1 1 300px', maxWidth: 400 }}>
                 <InputGroup id="dashboard-search-group">
                   <InputGroup.Text
                     style={{
@@ -229,20 +267,24 @@ function Collections() {
             </div>
           </div>
 
-          <div className="row g-4">
+          <div className={styles.cardGrid}>
             {filteredProjects.length === 0 && (
-              <div className="col-12">
+              <div style={{ width: '100%' }}>
                 <div className="alert alert-danger text-center bg-transparent" style={{
                   backgroundColor: isDarkMode ? '#3F4853' : 'transparent',
                   border: isDarkMode ? '1px solid #4E5762' : '1px solid border-danger',
                   color: isDarkMode ? 'white' : 'text-danger'
                 }}>
-                  No dashboards match your search.
+                  {activeTab === 'national' && !isLoggedin
+                    ? 'Log in to view your national dashboard collections.'
+                    : search
+                      ? 'No dashboards match your search.'
+                      : 'No dashboards available.'}
                 </div>
               </div>
             )}
             {filteredProjects.map(card => (
-              <div key={card.id} className={`col-12 col-sm-6 col-md-4 col-lg-2 ${styles.dashboardCardGap}`}>
+              <div key={card.id} className={styles.dashboardCardGap}>
                 <div className={`card h-100 shadow-sm border-0 overflow-hidden ${styles['custom-dashboard-card']}`} style={{
                   backgroundColor: isDarkMode ? '#3F4853' : '',
                   border: isDarkMode ? '1px solid #4E5762' : ''
@@ -323,6 +365,23 @@ function Collections() {
           </div>
         </Container>
       </main>
+      <img
+        src={withBasePath('/SPCMotif.png')}
+        alt=""
+        aria-hidden="true"
+        className="spc-motif-watermark"
+        style={{
+          position: 'fixed',
+          left: -180,
+          bottom: -250,
+          opacity: 0.08,
+          width: 750,
+          maxWidth: 'none',
+          height: 'auto',
+          pointerEvents: 'none',
+          zIndex: 0,
+        }}
+      />
     </div>
   );
 }

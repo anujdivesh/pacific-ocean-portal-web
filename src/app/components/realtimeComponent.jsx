@@ -6,6 +6,7 @@ import { Line } from 'react-chartjs-2';
 import 'chart.js/auto';
 import Lottie from 'lottie-react';
 import animationData from '@/components/lottie/live.json';
+import { withBasePath } from '@/app/lib/basePath';
 
 const fixedColors = [
   'rgb(255, 87, 51)',
@@ -412,8 +413,8 @@ const RealtimeComponent = ({
     const renderCountryFlag = (countryCode) => {
         const flagSrc = countryFlags[countryCode] || '/flags/spc.png';
         return (
-            <img 
-                src={flagSrc} 
+            <img
+                src={withBasePath(flagSrc)}
                 alt={`${countryCode} flag`} 
                 style={{ 
                     width: '80px', 

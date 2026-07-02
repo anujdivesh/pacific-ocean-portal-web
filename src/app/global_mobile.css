@@ -1,6 +1,6 @@
 /* Hide zoom controls and share button in mobile mode */
 @media (max-width: 1004px) {
-    .leaflet-control-zoom {
+    .maplibregl-ctrl-group {
       display: none !important;
     }
     .map-controls{

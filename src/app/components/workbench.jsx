@@ -20,14 +20,15 @@ import CheckBox from './checkbox';
 import RangeSlider from './range_slider';
 import { IoMdRemoveCircleOutline, IoMdClose } from "react-icons/io";
 import { get_url } from './urls';
+import { withBasePath } from '@/app/lib/basePath';
 import SofarTypeFilter from './sofarTypeFilter';
 import { toast } from 'react-hot-toast';
-import { 
-  getShareIdFromUrl, 
-  loadSharedWorkbench, 
-  restoreWorkbenchState, 
+import {
+  getShareIdFromUrl,
+  loadSharedWorkbench,
+  restoreWorkbenchState,
   cleanupShareUrl,
-  hasShareParameter 
+  hasShareParameter
 } from './shareUtils';
 import{FaLightbulb} from 'react-icons/fa';
 
@@ -84,7 +85,7 @@ const MyWorkbench = () => {
            const shareId = getShareIdFromUrl();
            // console.log('Share ID from URL:', shareId ? shareId.substring(0, 50) + '...' : 'null');
            const sharedState = loadSharedWorkbench(shareId);
-           
+
            if (sharedState) {
              console.log('Loading shared workbench state...');
              setIsRestoringFromShare(true); // Mark that we're restoring from share
@@ -123,7 +124,7 @@ const MyWorkbench = () => {
            // Load default layers from localStorage
            loadDefaultLayers();
          }
-        
+
         initialLoadDone.current = true;
       }
 
@@ -169,12 +170,12 @@ const MyWorkbench = () => {
       _isMounted.current = false;
     };
   }, [dispatch]);
-  
+
   // Open accordions for newly added layers (only after initial load)
   useEffect(() => {
     if (initialLoadDone.current && mapLayer.length > 0) {
       const lastLayer = mapLayer[mapLayer.length - 1];
-  
+
       if (lastLayer.id !== lastAddedId) {
         setLastAddedId(lastLayer.id);
         // Open the accordion for the newly added layer
@@ -208,7 +209,7 @@ const MyWorkbench = () => {
       setIsRestoringFromShare(false); // reset flag
     }
   }, [mapLayer, isRestoringFromShare, currentId, initialLoadDone.current]);
-  
+
   const handleToggle = (eventKey) => {
     const newOpenAccordions = new Set(openAccordions);
     if (newOpenAccordions.has(eventKey)) {
@@ -238,20 +239,59 @@ const MyWorkbench = () => {
     setOpenAccordions(newOpenAccordions);
   };
 
+  // Motif watermark (bottom-left), shown in both empty and populated states.
+  // Absolutely positioned + faint; does not affect layout/spacing.
+  // Fixed clip box matching the sidebar (marginLeft 3 + EXPANDED_WIDTH 350).
+  // overflow:hidden guarantees the motif never bleeds past the sidebar edge,
+  // regardless of the image width below.
+  const motifWatermark = (
+    <div
+      aria-hidden="true"
+      style={{
+        position: 'fixed',
+        left: 3,
+        bottom: 0,
+        width: 350,
+        height: 500,
+        overflow: 'hidden',
+        pointerEvents: 'none',
+        zIndex: 0,
+      }}
+    >
+      <img
+        src={withBasePath('/SPCMotif.png')}
+        alt=""
+        aria-hidden="true"
+        className="spc-motif-watermark"
+        style={{
+          display: 'block',
+          position: 'absolute',
+          left: -120,
+          bottom: -170,
+          opacity: 0.08,
+          width: 500,
+          maxWidth: 'none',
+          height: 'auto',
+          pointerEvents: 'none',
+        }}
+      />
+    </div>
+  );
+
   return (
     <>
       {mapLayer.length === 0 ? (
-  <div className="workbench-accordion" style={{ padding: '20px', textAlign: 'center' }}>
+  <div className="workbench-accordion" style={{ padding: '20px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
           <div style={{ marginBottom: '150px' }}>
             <div className="item" style={{ color: '#9CA3AF', fontSize: '16px', fontWeight: '500' }}>
               Your workbench is empty
             </div>
           </div>
-          
+
           <div id="workbenchHints" style={{ textAlign: 'left' }}>
-            <h5 className="workbench-hints-title" style={{ 
-              marginBottom: '15px', 
-              marginTop: 0, 
+            <h5 className="workbench-hints-title" style={{
+              marginBottom: '15px',
+              marginTop: 0,
               fontSize: '14px',
               fontWeight: '600'
             }}>
@@ -284,13 +324,14 @@ const MyWorkbench = () => {
               </li>
             </ul>
           </div>
+          {motifWatermark}
         </div>
       ) : (
-  <Col md={12} className="workbench-accordion" style={{ marginTop: -13, overflowY: 'auto' }}>
+  <Col md={12} className="workbench-accordion" style={{ marginTop: -13, overflowY: 'auto', overflowX: 'hidden', position: 'relative' }}>
           <hr style={{ marginRight: -10, marginLeft: -12 }} />
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <p style={{ fontSize: '12px', marginTop: '-10px' }}>DATA SETS ({mapLayer.length})</p>
-            <button 
+            <button
               className="remove-all-button"
               style={{ fontSize: '12px', marginTop: '-26px',paddingRight:5 }}
               onClick={() => {
@@ -308,14 +349,14 @@ const MyWorkbench = () => {
             const isOpen = openAccordions.has(item.id);
             var layer_Type = item.layer_information.layer_type;
             layer_Type = layer_Type.replace("_FORECAST", "");
-            
+
             if (layer_Type === 'WMS' || layer_Type === 'WMS_UGRID' || layer_Type === 'WMS_HINDCAST') {
               return (
                 <Accordion key={`${item.id}-${index}`} activeKey={isOpen ? item.id : null} style={{ paddingBottom: 4, border:0 }}>
                   <Card>
                     <Card.Header>
                       <CheckBox item={item} />
-                      <CustomToggle 
+                      <CustomToggle
                         eventKey={item.id}
                         isOpen={isOpen}
                         onToggle={handleToggle}
@@ -349,10 +390,10 @@ const MyWorkbench = () => {
               return (
                 <Accordion key={`${item.id}-${index}`} activeKey={isOpen ? item.id : null} style={{ paddingBottom: 4 }}>
                   <Card>
-                
+
                     <Card.Header>
                       <CheckBox item={item} />
-                      <CustomToggle 
+                      <CustomToggle
                         eventKey={item.id}
                         isOpen={isOpen}
                         onToggle={handleToggle}
@@ -376,7 +417,7 @@ const MyWorkbench = () => {
                   <Card>
                     <Card.Header>
                       <CheckBox item={item} />
-                      <CustomToggle 
+                      <CustomToggle
                         eventKey={item.id}
                         isOpen={isOpen}
                         onToggle={handleToggle}
@@ -399,7 +440,7 @@ const MyWorkbench = () => {
                   <Card>
                     <Card.Header>
                       <CheckBox item={item} />
-                      <CustomToggle 
+                      <CustomToggle
                         eventKey={item.id}
                         isOpen={isOpen}
                         onToggle={handleToggle}
@@ -424,6 +465,7 @@ const MyWorkbench = () => {
               );
             }
           })}
+          {motifWatermark}
         </Col>
       )}
   <BottomOffCanvas isVisible={isVisible} id={currentId} key={currentId || 'offcanvas'} />
