@@ -467,7 +467,10 @@ function BottomOffCanvas({ isVisible, id }) {
             }}
           />
         </div>
-        <div style={{ position: 'relative', zIndex: 1 }}>
+        {/* isolate (not position:relative) so tab content paints above the
+            watermark without becoming the containing block for the tabs'
+            absolutely-positioned loading messages (which center on the body). */}
+        <div style={{ isolation: 'isolate' }}>
           {renderTabsBasedOnLayerType()}
         </div>
       </Offcanvas.Body>
