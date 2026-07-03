@@ -21,6 +21,9 @@ const ExploreModal = ({ show, onClose, title, bodyContent }) => {
   const [country, setCountry] = useState(null);
   const [searchQuery, setSearchQuery] = useState(""); // State for search input
   const countryId = useAppSelector((state) => state.auth.country);
+  const datasetList = useAppSelector((state) => state.dataset_list.value);
+  // "Go to the Map" button (in the metadata pane) is only shown in the empty state.
+  const showMapWatermark = !datasetList || datasetList.length === 0;
 
   // Fetch data based on the selectedId (theme-based data)
   const fetchData = async (id) => {
@@ -260,7 +263,18 @@ useEffect(() => {
          .custom-modal.explore-modal .btn-close:hover { filter:invert(1) brightness(260%); opacity:1; }
       `}</style>
   <Modal show={show} onHide={onClose} centered size="xl" backdrop={true} keyboard={true} className="custom-modal explore-modal">
-        <Modal.Header closeButton className="custom-header2" style={{ background: '#519ac2',  paddingTop: '8px', paddingBottom: '8px', minHeight: 'unset', color: '#ffffff' }}>
+        <Modal.Header closeButton className="custom-header2" style={{
+            backgroundColor: '#519ac2',
+            backgroundImage: `url(${withBasePath('/SPC_Header3.png')})`,
+            backgroundBlendMode: 'screen',
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'center',
+            backgroundSize: 'cover',
+            paddingTop: '8px',
+            paddingBottom: '8px',
+            minHeight: 'unset',
+            color: '#ffffff',
+          }}>
           <Modal.Title style={{ fontSize: '18px', color:'#ffffff' }}>
             {/* Search input */}
            <div style={{ position: 'relative', display: 'inline-block' }}>
@@ -322,7 +336,39 @@ useEffect(() => {
             ))}
           </Modal.Title>
         </Modal.Header>
-  <Modal.Body style={{ margin: 0, padding: 0, width: '100%', background: '#ffffff', color: 'var(--color-text, #1e293b)' }}>
+  <Modal.Body style={{ position: 'relative', margin: 0, padding: 0, width: '100%', background: '#ffffff', color: 'var(--color-text, #1e293b)' }}>
+          {showMapWatermark && (
+            <div
+              aria-hidden="true"
+              style={{
+                position: 'absolute',
+                right: 0,
+                bottom: 0,
+                width: 300,
+                height: 300,
+                overflow: 'hidden',
+                pointerEvents: 'none',
+                zIndex: 2,
+              }}
+            >
+              <img
+                src={withBasePath('/SPCMotif.png')}
+                alt=""
+                aria-hidden="true"
+                style={{
+                  display: 'block',
+                  position: 'absolute',
+                  right: -70,
+                  bottom: -90,
+                  opacity: 0.08,
+                  width: 320,
+                  maxWidth: 'none',
+                  height: 'auto',
+                  pointerEvents: 'none',
+                }}
+              />
+            </div>
+          )}
           <Row className="g-0" style={{width:'100%'}}>
             <Col md={4} className="scrollable-column" style={{ background: '#f8f8f8', borderRight:'1px solid #e5e7eb' }}>
               {loading ? (

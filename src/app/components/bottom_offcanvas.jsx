@@ -434,9 +434,42 @@ function BottomOffCanvas({ isVisible, id }) {
       </Button>
 
       <style>{customTabStyles}</style>
-      
-      <Offcanvas.Body style={{ paddingTop: '8px', borderRadius: 0 }}>
-        {renderTabsBasedOnLayerType()}
+
+      <Offcanvas.Body style={{ position: 'relative', paddingTop: '8px', borderRadius: 0 }}>
+        {/* Motif watermark, bottom-right, clipped so only its right edge bleeds off */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            right: 0,
+            bottom: 0,
+            width: 300,
+            height: 300,
+            overflow: 'hidden',
+            pointerEvents: 'none',
+            zIndex: 0,
+          }}
+        >
+          <img
+            src={withBasePath('/SPCMotif.png')}
+            alt=""
+            aria-hidden="true"
+            style={{
+              display: 'block',
+              position: 'absolute',
+              right: -70,
+              bottom: -100,
+              opacity: 0.05,
+              width: 350,
+              maxWidth: 'none',
+              height: 'auto',
+              pointerEvents: 'none',
+            }}
+          />
+        </div>
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          {renderTabsBasedOnLayerType()}
+        </div>
       </Offcanvas.Body>
 
       {/* Share Workbench Modal */}

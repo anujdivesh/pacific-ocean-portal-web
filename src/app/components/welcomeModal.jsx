@@ -171,6 +171,38 @@ return (
             <Modal.Title className="custom-welcome-modal-title">{randomGreeting()}</Modal.Title>
         </Modal.Header>
         <Modal.Body className="custom-welcome-modal-body">
+            {/* Motif watermark, bottom-right, clipped so only its right edge bleeds off */}
+            <div
+                className="welcome-watermark"
+                aria-hidden="true"
+                style={{
+                    position: 'absolute',
+                    right: 0,
+                    bottom: 0,
+                    width: 300,
+                    height: 300,
+                    overflow: 'hidden',
+                    pointerEvents: 'none',
+                    zIndex: 0,
+                }}
+            >
+                <img
+                    src={withBasePath('/SPCMotif.png')}
+                    alt=""
+                    aria-hidden="true"
+                    style={{
+                        display: 'block',
+                        position: 'absolute',
+                        right: -70,
+                        bottom: -85,
+                        opacity: 0.08,
+                        width: 320,
+                        maxWidth: 'none',
+                        height: 'auto',
+                        pointerEvents: 'none',
+                    }}
+                />
+            </div>
             <h4 className="text-center custom-welcome-title">Welcome to Pacific Ocean Portal!</h4>
             {/* Basemap Selector */}
             <div>
@@ -265,14 +297,19 @@ return (
                 --modal-text: #1e293b;
             }
             .custom-welcome-modal-header {
-                background: #3F51B5 !important;
+                background-color: #3F51B5 !important;
+                background-image: url(${withBasePath('/SPC_Header3.png')}) !important;
+                background-blend-mode: screen;
+                background-repeat: no-repeat;
+                background-position: center;
+                background-size: cover;
                 border-bottom: 1px solid #38404a;
                 min-height: 38px;
                 padding: 8px 18px 6px 18px;
                 border-radius: 0 !important;
             }
             html.light-mode .custom-welcome-modal-header {
-                background: #3F51B5 !important;
+                background-color: #3F51B5 !important;
                 border-bottom: 1px solid #e2e8f0;
                 border-radius: 0 !important;
             }
@@ -287,6 +324,11 @@ return (
             }
             .custom-welcome-modal-body {
                 padding: 18px 24px 0 24px;
+                position: relative;
+            }
+            .custom-welcome-modal-body > *:not(.welcome-watermark) {
+                position: relative;
+                z-index: 1;
             }
             .custom-welcome-title {
                 margin-top: 0;
