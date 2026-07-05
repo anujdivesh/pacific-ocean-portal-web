@@ -609,10 +609,16 @@ const MapBox = () => {
         border-radius: 26px !important;
         box-shadow: 0 4px 14px -2px rgba(0,0,0,0.45), 0 1px 3px rgba(0,0,0,0.35) !important;
         overflow: hidden; display: flex; flex-direction: column; padding: 3px 0;
+        position: relative;
+      }
+      .maplibregl-ctrl-group .ctrl-watermark {
+        position: absolute; right: -30px; bottom: -30px; width: 110px; height: auto;
+        opacity: 0.08; pointer-events: none; z-index: 0;
       }
       .maplibregl-ctrl-group button {
         background: transparent !important; color: #f1f5f9 !important;
         border: none !important; width: 32px; height: 30px; margin: 0 5px; border-radius: 11px;
+        position: relative; z-index: 1;
       }
       .maplibregl-ctrl-group button + button { border-top: none !important; margin-top: 3px; }
       .maplibregl-ctrl-group button:hover { background: rgba(255,255,255,0.08) !important; }
@@ -656,7 +662,7 @@ const MapBox = () => {
       .map-controls-container { z-index: 305; position: relative; }
       .map-controls-container .map-controls { position: relative; z-index: 306; }
       .map-controls {
-        background: #3F4854 !important; padding: 14px 14px 12px; border-radius: 10px;
+        background: #3F4854 !important; padding: 14px 14px 12px; border-radius: 10px; overflow: hidden;
         box-shadow: 0 4px 14px -2px rgba(0,0,0,0.45), 0 1px 3px rgba(0,0,0,0.35);
         color: #e2e8f0 !important; font-family: inherit; font-size: 13px; line-height: 1.5;
         border: 1px solid #4b5560; backdrop-filter: saturate(1.2) blur(4px);
@@ -720,6 +726,7 @@ const MapBox = () => {
           <input id="city-check" type="checkbox" ${checkboxCheckedCity ? 'checked' : ''}/> Pacific Names
         </label>
       </div>
+      <img src="${withBasePath('/SPCMotif.png')}" alt="" aria-hidden="true" style="display:block; position:absolute; right:-70px; bottom:-100px; opacity:0.05; width:350px; max-width:none; height:auto; pointer-events:none; z-index:-1;" />
     `;
 
     const basemapTitle = div.querySelector('.section-title:first-child');
@@ -784,6 +791,14 @@ const MapBox = () => {
         shareBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg>';
         navGroup.insertBefore(shareBtn, navGroup.firstChild);
         shareBtn.addEventListener('click', (e) => { e.preventDefault(); handleShowShareModal(); });
+
+        // SPC motif watermark behind the zoom/share buttons
+        const watermark = document.createElement('img');
+        watermark.className = 'ctrl-watermark';
+        watermark.src = withBasePath('/SPCMotif.png');
+        watermark.alt = '';
+        watermark.setAttribute('aria-hidden', 'true');
+        navGroup.appendChild(watermark);
       }
     } catch (e) { /* ignore */ }
 

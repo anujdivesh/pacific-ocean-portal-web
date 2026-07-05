@@ -361,7 +361,7 @@ useEffect(() => {
                   right: -70,
                   bottom: -90,
                   opacity: 0.08,
-                  width: 320,
+                  width: 350,
                   maxWidth: 'none',
                   height: 'auto',
                   pointerEvents: 'none',

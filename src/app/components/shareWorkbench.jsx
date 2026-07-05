@@ -7,6 +7,7 @@ import { FaCopy, FaLink, FaCompress } from 'react-icons/fa';
 import GetMapIcon from './GetMapIcon';
 import { get_url } from './urls';
 import LZString from 'lz-string';
+import { withBasePath } from '@/app/lib/basePath';
 
 const ShareWorkbench = ({ show, onHide }) => {
   const [shareUrl, setShareUrl] = useState('');
@@ -294,16 +295,32 @@ const ShareWorkbench = ({ show, onHide }) => {
 
 
   return (
-    <Modal show={show} onHide={onHide} size="lg" className="share-modal" style={{borderRadius:0}}>
-      <Modal.Header 
+    <Modal show={show} onHide={onHide} size="lg" className="share-modal" contentClassName="share-modal-content" style={{borderRadius:0}}>
+      <style jsx global>{`
+        .share-modal .modal-content,
+        .share-modal-content {
+          border-radius: 0 !important;
+        }
+        .share-modal .modal-header,
+        .share-modal .modal-body,
+        .share-modal .modal-footer {
+          border-radius: 0 !important;
+        }
+      `}</style>
+      <Modal.Header
         closeButton 
         closeVariant="white"
-        style={{ 
-          background: '#3F51B5', 
-          color: '#fff', 
-          borderBottom: '1px solid #38404a', 
-          minHeight: '38px', 
-          padding: '8px 18px 6px 18px', 
+        style={{
+          backgroundColor: '#3F51B5',
+          backgroundImage: `url(${withBasePath('/SPC_Header3.png')})`,
+          backgroundBlendMode: 'screen',
+          backgroundRepeat: 'no-repeat',
+          backgroundPosition: 'center',
+          backgroundSize: 'cover',
+          color: '#fff',
+          borderBottom: '1px solid #38404a',
+          minHeight: '38px',
+          padding: '8px 18px 6px 18px',
         }}
       >
         <Modal.Title className="d-flex align-items-center" style={{ color: '#fff', fontWeight: 600, fontSize: '1.1rem', margin: 0 }}>

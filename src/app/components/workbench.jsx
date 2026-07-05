@@ -268,7 +268,7 @@ const MyWorkbench = () => {
           position: 'absolute',
           left: -120,
           bottom: -170,
-          opacity: 0.08,
+          opacity: 0.07,
           width: 500,
           maxWidth: 'none',
           height: 'auto',

@@ -1098,8 +1098,29 @@ const visibleDots = timestamps.slice(
       </div>
 
       {/* Modal for enlarged view */}
-      <Modal show={showModal} onHide={closeModal} size="lg">
-        <Modal.Header closeButton style={{backgroundColor:'#3f51b5', color:'white'}} closeVariant="white">
+      <Modal show={showModal} onHide={closeModal} size="lg" className="preview-modal" contentClassName="preview-modal-content">
+        <style jsx global>{`
+          .preview-modal .modal-content,
+          .preview-modal-content,
+          .preview-modal .modal-header,
+          .preview-modal .modal-body,
+          .preview-modal .modal-footer {
+            border-radius: 0 !important;
+          }
+        `}</style>
+        <Modal.Header
+          closeButton
+          closeVariant="white"
+          style={{
+            backgroundColor: '#3f51b5',
+            backgroundImage: `url(${withBasePath('/SPC_Header3.png')})`,
+            backgroundBlendMode: 'screen',
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'center',
+            backgroundSize: 'cover',
+            color: 'white',
+          }}
+        >
           <Modal.Title style={{color: 'white !important'}}>Preview</Modal.Title>
         </Modal.Header>
         <Modal.Body>

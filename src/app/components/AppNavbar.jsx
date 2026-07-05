@@ -388,13 +388,18 @@ export default function AppNavbar({ logoutButtonSize = 'sm' }) {
         <Modal.Header 
           closeButton 
           closeVariant="white"
-          style={{ 
-            background: '#3F51B5', 
-            color: '#fff', 
-            borderBottom: '1px solid #38404a', 
-            minHeight: '38px', 
-            padding: '8px 18px 6px 18px', 
-            borderRadius: 0 
+          style={{
+            backgroundColor: '#3F51B5',
+            backgroundImage: `url(${withBasePath('/SPC_Header3.png')})`,
+            backgroundBlendMode: 'screen',
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'center',
+            backgroundSize: 'cover',
+            color: '#fff',
+            borderBottom: '1px solid #38404a',
+            minHeight: '38px',
+            padding: '8px 18px 6px 18px',
+            borderRadius: 0
           }}
         >
           <Modal.Title style={{ color: '#fff', fontWeight: 600, fontSize: '1.1rem', margin: 0 }}>Login</Modal.Title>
@@ -450,13 +455,18 @@ export default function AppNavbar({ logoutButtonSize = 'sm' }) {
         <Modal.Header 
           closeButton 
           closeVariant="white"
-          style={{ 
-            background: '#3F51B5', 
-            color: '#fff', 
-            borderBottom: '1px solid #38404a', 
-            minHeight: '38px', 
-            padding: '8px 18px 6px 18px', 
-            borderRadius: 0 
+          style={{
+            backgroundColor: '#3F51B5',
+            backgroundImage: `url(${withBasePath('/SPC_Header3.png')})`,
+            backgroundBlendMode: 'screen',
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'center',
+            backgroundSize: 'cover',
+            color: '#fff',
+            borderBottom: '1px solid #38404a',
+            minHeight: '38px',
+            padding: '8px 18px 6px 18px',
+            borderRadius: 0
           }}
         >
           <Modal.Title style={{ color: '#fff', fontWeight: 600, fontSize: '1.1rem', margin: 0 }}>Signup</Modal.Title>

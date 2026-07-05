@@ -193,7 +193,25 @@ const SmallMap = ({ currentDataset }) => {
       console.error('SmallMap error:', err || e);
     });
 
-    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-left');
+    const nav = new maplibregl.NavigationControl({ showCompass: false });
+    map.addControl(nav, 'top-left');
+    try {
+      const navGroup = nav._container;
+      if (navGroup) {
+        navGroup.style.position = 'relative';
+        navGroup.style.overflow = 'hidden';
+        const watermark = document.createElement('img');
+        watermark.src = withBasePath('/SPCMotif.png');
+        watermark.alt = '';
+        watermark.setAttribute('aria-hidden', 'true');
+        watermark.style.cssText = 'position:absolute; right:-30px; bottom:-30px; width:110px; height:auto; opacity:0.08; pointer-events:none; z-index:0;';
+        navGroup.appendChild(watermark);
+        navGroup.querySelectorAll('button').forEach((btn) => {
+          btn.style.position = 'relative';
+          btn.style.zIndex = '1';
+        });
+      }
+    } catch (e) { /* ignore */ }
     map.addControl(new maplibregl.AttributionControl({
       compact: false,
       customAttribution: '<a href="https://www.spc.int/" target="_blank">SPC</a> | &copy; Pacific Community SPC',
@@ -226,7 +244,7 @@ const SmallMap = ({ currentDataset }) => {
           {error}
         </div>
       )}
-      <div ref={mapContainer2} id="map2" className="small-map-container" style={{ width: '100%', height: '200px', zIndex: 0, borderRadius: 8, overflow: 'hidden', position: 'relative' }} />
+      <div ref={mapContainer2} id="map2" className="small-map-container" style={{ width: '100%', height: '200px', zIndex: 0, borderRadius: 0, overflow: 'hidden', position: 'relative' }} />
       {currentDataset?.id && (
         <button
           type="button"

@@ -4,6 +4,7 @@ import { Button } from 'react-bootstrap';
 import { hidesideoffCanvas  } from '@/app/GlobalRedux/Features/sideoffcanvas/sideoffcanvasSlice';
 import { useAppSelector, useAppDispatch } from '@/app/GlobalRedux/hooks';
 import { removeAllMapLayer } from '@/app/GlobalRedux/Features/map/mapSlice';
+import { withBasePath } from '@/app/lib/basePath';
 
 function SideOffCanvas({isVisible}) {
     const dispatch = useAppDispatch();
@@ -57,7 +58,7 @@ return(
     <Offcanvas.Header closeButton>
       <Offcanvas.Title>Saving Workbench Layers</Offcanvas.Title>
     </Offcanvas.Header>
-    <Offcanvas.Body>
+    <Offcanvas.Body style={{ position: 'relative', overflow: 'hidden' }}>
     To save the workbench layers, simply use the option provided below. This will allow the application to remember your selected layers and display them when the application is launched.
 
      <br/><br/>
@@ -78,6 +79,23 @@ return(
                             Clear Saved Layers
                         </Button>
                     </div>
+      <img
+        src={withBasePath('/SPCMotif.png')}
+        alt=""
+        aria-hidden="true"
+        style={{
+          display: 'block',
+          position: 'absolute',
+          right: -150,
+          bottom: -100,
+          opacity: 0.05,
+          width: 550,
+          maxWidth: 'none',
+          height: 'auto',
+          pointerEvents: 'none',
+          zIndex: 0,
+        }}
+      />
     </Offcanvas.Body>
   </Offcanvas>
 )
