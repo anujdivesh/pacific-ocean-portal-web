@@ -203,7 +203,11 @@ function DynamicImage({ height }) {
           const unitParam = `&unit=${units}`;
           const cacheParam = `&use_cache=${useCache ? 'True' : 'False'}`;
           const nocache = useCache ? '' : `&nocache=${Date.now()}`;
-          return base + unitParam + cacheParam + nocache + `&token=${token_id}`;
+          // Only append min/max color when the layer opts in via update_color.
+          const colorParam = layerInformation.update_color
+            ? `&minColor=${layerInformation.colormin}&maxColor=${layerInformation.colormax}`
+            : '';
+          return base + unitParam + cacheParam + nocache + colorParam + `&token=${token_id}`;
         });
         skipNextTimestampInit.current = true;
         setImages(dynamicImages);
@@ -268,7 +272,11 @@ function DynamicImage({ height }) {
           const unitParam = `&unit=${units}`;
           const cacheParam = `&use_cache=${useCache ? 'True' : 'False'}`;
           const nocache = useCache ? '' : `&nocache=${Date.now()}`;
-          return base + unitParam + cacheParam + nocache + `&token=${token_id}`;
+          // Only append min/max color when the layer opts in via update_color.
+          const colorParam = layerInformation.update_color
+            ? `&minColor=${layerInformation.colormin}&maxColor=${layerInformation.colormax}`
+            : '';
+          return base + unitParam + cacheParam + nocache + colorParam + `&token=${token_id}`;
         });
 
         skipNextTimestampInit.current = true;
