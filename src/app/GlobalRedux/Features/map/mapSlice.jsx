@@ -4,7 +4,7 @@ import { get_url } from '@/app/components/urls';
 
 // Default Pacific-wide bounds — matches the "Pacific Islands" region (id=1).
 // Used when no region has been selected yet (first-ever visit).
-const DEFAULT_BOUNDS = { west: 100, east: 300, south: -45, north: 45 };
+const DEFAULT_BOUNDS = { west: 110, east: 260, south: -45, north: 45 };
 
 // Read cached bounds from localStorage so the map can initialize at the correct
 // viewport immediately, avoiding the visible "jump" that occurs when the sidebar
