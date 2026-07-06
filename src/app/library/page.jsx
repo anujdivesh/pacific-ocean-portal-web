@@ -646,9 +646,16 @@ const Library = () => {
         contentClassName={styles.shareLibraryModalContent}
         backdropClassName={styles.shareLibraryModalBackdrop}
       >
-        <Modal.Header 
-          // closeButton 
+        <Modal.Header
+          // closeButton
           className={styles.shareLibraryModalHeader}
+          style={{
+            backgroundImage: `url(${withBasePath('/SPC_Header3.png')})`,
+            backgroundBlendMode: 'screen',
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'center',
+            backgroundSize: 'cover',
+          }}
         >
           <Modal.Title>
             Share Document

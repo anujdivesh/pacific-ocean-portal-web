@@ -1,5 +1,6 @@
 import React from 'react';
 import { Modal, Button } from 'react-bootstrap';
+import { withBasePath } from '@/app/lib/basePath';
 
 export default function DashboardInfoModal({ show, onHide, card }) {
   if (!card) return null;
@@ -47,10 +48,15 @@ export default function DashboardInfoModal({ show, onHide, card }) {
         style={{ borderRadius: '0' }}
         contentClassName="rounded-0"
       >
-        <Modal.Header 
-          closeButton 
-          style={{ 
-            backgroundColor: '#3F51B5', 
+        <Modal.Header
+          closeButton
+          style={{
+            backgroundColor: '#3F51B5',
+            backgroundImage: `url(${withBasePath('/SPC_Header3.png')})`,
+            backgroundBlendMode: 'screen',
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'center',
+            backgroundSize: 'cover',
             color: 'white',
             border: 'none',
             borderRadius: '0'
