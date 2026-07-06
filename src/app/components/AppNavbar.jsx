@@ -256,7 +256,7 @@ export default function AppNavbar({ logoutButtonSize = 'sm' }) {
             backgroundRepeat: 'no-repeat',
             backgroundPosition: 'center',
             backgroundSize: 'cover',
-            opacity: 0.5,
+            opacity: 0.6,
             pointerEvents: 'none',
             zIndex: 0,
           }}
