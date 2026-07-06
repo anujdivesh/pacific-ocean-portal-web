@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import styles from "./AppNavbar.module.css";
 // import "./navbar_mobile.css";
 import { useState, useEffect, useActionState } from "react";
-import { FaToggleOn, FaToggleOff, FaSun, FaMoon, FaBars } from "react-icons/fa";
+import { FaToggleOn, FaToggleOff, FaSun, FaMoon, FaBars, FaInfoCircle } from "react-icons/fa";
 import { login, logout as logoutServer } from "@/app/login/action";
 import { useAppSelector, useAppDispatch } from "@/app/GlobalRedux/hooks";
 import { login as loginAction, logout as logoutAction, updateCountry, updateToken } from "@/app/GlobalRedux/Features/auth/authSlice";
@@ -256,7 +256,7 @@ export default function AppNavbar({ logoutButtonSize = 'sm' }) {
             backgroundRepeat: 'no-repeat',
             backgroundPosition: 'center',
             backgroundSize: 'cover',
-            opacity: 0.4,
+            opacity: 0.5,
             pointerEvents: 'none',
             zIndex: 0,
           }}
@@ -472,9 +472,27 @@ export default function AppNavbar({ logoutButtonSize = 'sm' }) {
           <Modal.Title style={{ color: '#fff', fontWeight: 600, fontSize: '1.1rem', margin: 0 }}>Signup</Modal.Title>
         </Modal.Header>
         <Modal.Body style={{ background: 'var(--nav-bg)', color: 'var(--nav-fg)' }}>
-          <p style={{ margin: 0 }}>
-            Please contact <a href="mailto:cosppac@spc.int" style={{ color: '#3b82f6', textDecoration: 'underline' }}>cosppac@spc.int</a> for registration.
-          </p>
+          <div
+            style={{
+              display: 'flex',
+              gap: '0.75rem',
+              padding: '0.85rem 1rem',
+              borderRadius: '8px',
+              background: 'rgba(212, 221, 106, 0.15)',
+              border: '1px solid rgba(212, 221, 106, 0.5)',
+              borderLeft: '4px solid #D4DD6A',
+            }}
+          >
+            <FaInfoCircle style={{ color: '#8f9a2e', flexShrink: 0, marginTop: '0.15rem' }} size={18} />
+            <div>
+              <p style={{ marginTop: 0, marginBottom: '0.6rem' }}>
+                Login details are primarily provided to National Meteorological Services that have tailored products hosted by The Pacific Community (SPC).
+              </p>
+              <p style={{ margin: 0 }}>
+                Please contact <a href="mailto:cosppac@spc.int" style={{ color: '#8f9a2e', textDecoration: 'underline' }}>cosppac@spc.int</a> for more information.
+              </p>
+            </div>
+          </div>
         </Modal.Body>
         <Modal.Footer style={{ background: 'var(--nav-bg)', color: 'var(--nav-fg)', borderTop: '1px solid var(--panel-border)' }}>
           <Button variant="secondary" onClick={() => setShowSignupModal(false)} style={{ border: '1px solid var(--panel-border)' }}>

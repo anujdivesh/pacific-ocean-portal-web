@@ -371,6 +371,7 @@ function BottomOffCanvas({ isVisible, id }) {
           top: 0,
           left: 0,
           right: 0,
+          zIndex: 20,
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
