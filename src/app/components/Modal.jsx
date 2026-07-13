@@ -360,7 +360,7 @@ useEffect(() => {
                   position: 'absolute',
                   right: -70,
                   bottom: -90,
-                  opacity: 0.08,
+                  opacity: 0.09,
                   width: 350,
                   maxWidth: 'none',
                   height: 'auto',

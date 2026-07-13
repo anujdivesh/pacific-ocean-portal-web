@@ -37,7 +37,7 @@ const customTabStyles = `
     background-repeat: no-repeat;
     background-position: center;
     background-size: cover;
-    opacity: 0.3;
+    opacity: 0.7;
     pointer-events: none;
     z-index: 0;
   }
@@ -460,7 +460,7 @@ function BottomOffCanvas({ isVisible, id }) {
               position: 'absolute',
               right: -70,
               bottom: -100,
-              opacity: 0.05,
+              opacity: 0.08,
               width: 380,
               maxWidth: 'none',
               height: 'auto',

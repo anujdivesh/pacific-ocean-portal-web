@@ -293,7 +293,7 @@ const MyWorkbench = () => {
           background-repeat: no-repeat;
           background-position: center;
           background-size: cover;
-          opacity: 0.4;
+          opacity: 0.6;
           pointer-events: none;
           z-index: 0;
         }

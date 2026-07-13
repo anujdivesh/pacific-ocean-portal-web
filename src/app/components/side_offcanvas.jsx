@@ -88,7 +88,7 @@ return(
           position: 'absolute',
           right: -150,
           bottom: -100,
-          opacity: 0.05,
+          opacity: 0.08,
           width: 550,
           maxWidth: 'none',
           height: 'auto',

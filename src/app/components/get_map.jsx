@@ -726,7 +726,7 @@ const MapBox = () => {
           <input id="city-check" type="checkbox" ${checkboxCheckedCity ? 'checked' : ''}/> Pacific Names
         </label>
       </div>
-      <img src="${withBasePath('/SPCMotif.png')}" alt="" aria-hidden="true" style="display:block; position:absolute; right:-70px; bottom:-100px; opacity:0.05; width:350px; max-width:none; height:auto; pointer-events:none; z-index:-1;" />
+      <img src="${withBasePath('/SPCMotif.png')}" alt="" aria-hidden="true" style="display:block; position:absolute; right:-70px; bottom:-100px; opacity:0.07; width:350px; max-width:none; height:auto; pointer-events:none; z-index:-1;" />
     `;
 
     const basemapTitle = div.querySelector('.section-title:first-child');
