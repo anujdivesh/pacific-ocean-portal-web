@@ -490,11 +490,16 @@ const MapBox = () => {
     }, 100);
     setIsLoading(false);
   };
+  const getProxiedUrl = (url) => {
+  const proxyOrigin = typeof window !== 'undefined' ? window.location.origin : '';
+  return `${proxyOrigin}${withBasePath('/api/proxy-tile')}?url=${encodeURIComponent(url)}`;
+};
 
   const fetchAndPlotGeoJSON = async (url, id) => {
     try {
       setIsLoading(true);
-      const response = await fetch(url);
+        const proxied = getProxiedUrl(url);
+      const response = await fetch(proxied);
       const geojsonData = await response.json();
       addPointLayer(processDateline(geojsonData), id, 'wfs');
     } catch (error) {
@@ -505,7 +510,8 @@ const MapBox = () => {
   const fetchAndPlotGeoJSONTIDE = async (url, id) => {
     try {
       setIsLoading(true);
-      const response = await fetch(url);
+      const proxied = getProxiedUrl(url);
+      const response = await fetch(proxied);
       const geojsonData = await response.json();
       addPointLayer(processDateline(geojsonData), id, 'tide');
     } catch (error) {
