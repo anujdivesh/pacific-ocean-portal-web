@@ -13,6 +13,7 @@ import ButtonGroup from 'react-bootstrap/ButtonGroup';
 import { IoIosAddCircleOutline, IoMdRemoveCircleOutline } from "react-icons/io";
 import { FaRegTrashCan } from "react-icons/fa6";
 import { get_url } from './urls';
+import { sameId } from './helper';
 import { IoIosArrowDown } from "react-icons/io"; // Import the icon
 import { GoPlus } from "react-icons/go";
 import { FiMinus } from "react-icons/fi";
@@ -21,8 +22,13 @@ import { IoDocumentTextOutline } from "react-icons/io5";
 
 function ButtonGroupComp({ item }) {
   const isVisible = useAppSelector((state) => state.offcanvas.isVisible);
+  const currentId = useAppSelector((state) => state.offcanvas.currentId);
   const dispatch = useAppDispatch();
   const mapLayer = useAppSelector((state) => state.mapbox.layers);
+
+  // The offcanvas is shared by every accordion, so "open" must be evaluated per
+  // layer — otherwise every plotter button mirrors whichever layer is showing.
+  const isThisLayerOpen = isVisible && sameId(currentId, item.id);
 
   const fetchData = async (id) => {
     try {
@@ -43,7 +49,9 @@ function ButtonGroupComp({ item }) {
   };
 
   const handleShow = (id) => {
-    if (isVisible) {
+    if (isVisible && sameId(currentId, id)) {
+      // Only this layer's own plotter closes the panel; a different layer's
+      // plotter switches the panel over to that layer.
       dispatch(hideoffCanvas());
     } else {
       dispatch(showoffCanvas(id)); // Pass the id to showoffCanvas
@@ -74,7 +82,7 @@ function ButtonGroupComp({ item }) {
           onClick={() => handleShow(item.id)}
           
         >
-         {isVisible ? <FiMinus size={18} color='white' style={{marginTop:-2}}/> : <GoPlus size={18} color='white' style={{marginTop:-2}}/>}   PLOTTER
+         {isThisLayerOpen ? <FiMinus size={18} color='white' style={{marginTop:-2}}/> : <GoPlus size={18} color='white' style={{marginTop:-2}}/>}   PLOTTER
         </Button>
         <Button 
           variant="secondary" 

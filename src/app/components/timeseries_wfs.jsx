@@ -4,6 +4,7 @@ import { Spinner } from 'react-bootstrap';
 import { Line } from 'react-chartjs-2'; 
 import 'chart.js/auto'; 
 import { useAppSelector } from '@/app/GlobalRedux/hooks';
+import { getLayerById } from './helper';
 
 const fixedColors = [
 ' 	rgb(255, 87, 51)',
@@ -20,6 +21,7 @@ const getColorByIndex = (index) => {
 
 function TimeseriesWfs({ height, data }) {
   const mapLayer = useAppSelector((state) => state.mapbox.layers);
+  const currentId = useAppSelector((state) => state.offcanvas.currentId);
   const lastlayer = useRef(0);
   const { id, x, y, sizex, sizey, bbox, station } = data || {};
   console.log({ id, x, y, sizex, sizey, bbox, station })
@@ -97,13 +99,15 @@ function TimeseriesWfs({ height, data }) {
   
 
   useEffect(() => {
-    //console.log("mapLayer updated:", mapLayer);  // Debugging line
-    const layerInformation = mapLayer[mapLayer.length - 1]?.layer_information;
+    // Use the layer the plotter was opened for. Reading the LAST layer in the
+    // workbench built this chart's URL from whichever dataset happened to be
+    // added most recently once more than one accordion was present.
+    const layerInformation = getLayerById(mapLayer, currentId)?.layer_information;
 
     ///console.log(layerInformation, isCoordinatesValid)
 
-    
-    if (isCoordinatesValid && mapLayer.length > 0) {
+
+    if (isCoordinatesValid && layerInformation) {
       const { timeIntervalStart,timeIntervalStartOriginal, timeIntervalEnd,timeseries_url } = layerInformation;
 
       var dateOnlyStart = timeIntervalStart.split('T')[0];
@@ -125,7 +129,7 @@ function TimeseriesWfs({ height, data }) {
       
       fetchWfsDailyData(wfsUrl, setChartDataFn);
     }
-  }, [isCoordinatesValid, enabledChart, mapLayer,station]);  // Depend on mapLayer
+  }, [isCoordinatesValid, enabledChart, mapLayer, currentId, station]);  // Depend on mapLayer
   
 
    if (isLoading) {

@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic';
 import 'chart.js/auto';
 import { useAppSelector } from '@/app/GlobalRedux/hooks';
 import { Spinner } from 'react-bootstrap';
+import { getLayerById, getCoordinatesForLayer } from './helper';
 
 const Chart = dynamic(() => import('react-chartjs-2').then((mod) => mod.Chart), {
   ssr: false,
@@ -51,19 +52,10 @@ function filterToSixHourly(times, values) {
 function Histogram({ height }) {
   const mapLayer = useAppSelector((state) => state.mapbox.layers);
   const currentId = useAppSelector((state) => state.offcanvas.currentId);
-  // Robustly fetch coordinates for currentId, fallback to first available
+  // Coordinates for THIS layer only (its own station click, otherwise the
+  // shared base map click). Never fall back to another layer's coordinates.
   const allCoordinates = useAppSelector((state) => state.coordinate.coordinates);
-  let coordinates = allCoordinates[currentId];
-  if (!coordinates) {
-    // Fallback: use first available coordinates if currentId is missing
-    const keys = Object.keys(allCoordinates);
-    if (keys.length > 0) {
-      coordinates = allCoordinates[keys[0]];
-      console.warn('Fallback to first available coordinates:', coordinates);
-    } else {
-      coordinates = {};
-    }
-  }
+  const coordinates = getCoordinatesForLayer(allCoordinates, currentId) || {};
   const { x, y, sizex, sizey, bbox } = coordinates;
   const isCoordinatesValid = [x, y, sizex, sizey, bbox].every(v => v !== null && v !== undefined && v !== '');
 //  console.log('Coordinates used for histogram:', { x, y, sizex, sizey, bbox });
@@ -80,6 +72,8 @@ function Histogram({ height }) {
   const [enabledChart, setEnabledChart] = useState(false);
   const prevCoordinates = useRef({ x, y, sizex, sizey, bbox });
   const prevLayerId = useRef(null);
+  // Monotonic id for in-flight loads; only the newest one may update state.
+  const requestSeq = useRef(0);
   // Add themeVersion state to force re-render on theme change
   const [themeVersion, setThemeVersion] = useState(0);
 
@@ -269,15 +263,19 @@ function Histogram({ height }) {
     setChartData({ labels: [], datasets: [] });
     setAxesConfig({});
 
-    const currentLayerId = mapLayer[mapLayer.length - 1]?.id;
-    prevLayerId.current = currentLayerId;
+    // Tag this run so a slow response from a previous layer/position can never
+    // paint over the chart the user is now looking at.
+    const requestId = ++requestSeq.current;
+    prevLayerId.current = currentId;
     prevCoordinates.current = { x, y, sizex, sizey, bbox };
 
     const results = await Promise.all(
-      datasetsConfig.map((dataset, index) => 
+      datasetsConfig.map((dataset, index) =>
         fetchData(dataset.timerange, dataset.query_url, dataset.layer, dataset.label, index)
       )
     );
+
+    if (requestId !== requestSeq.current) return; // superseded
 
     const validResults = results.filter(Boolean);
     const newDatasets = validResults.map(result => processDataset(result));
@@ -294,22 +292,16 @@ function Histogram({ height }) {
     setAllDataLoaded(true);
   };
 
-  function getLayerById(layersArray, id) {
-    for (let i = 0; i < layersArray.length; i++) {
-      if (layersArray[i].id === id) {
-        return layersArray[i];
-      }
-    }
-    return undefined;
-  }
-
   useEffect(() => {
     if (isCoordinatesValid && mapLayer.length > 0) {
-      var selected_layer = getLayerById(mapLayer, currentId);
+      const selected_layer = getLayerById(mapLayer, currentId);
       if (!selected_layer) {
-        // Fallback: use first layer if currentId not found
-        selected_layer = mapLayer[0];
-        console.warn('Fallback to first available layer:', selected_layer);
+        // The plotter's layer is gone (removed while open). Show nothing rather
+        // than charting some other layer's variables.
+        setDatasetsConfig([]);
+        setChartData({ labels: [], datasets: [] });
+        setEnabledChart(false);
+        return;
       }
       const layerInformation = selected_layer.layer_information;
       if (layerInformation?.enable_chart_timeseries) {
@@ -353,12 +345,14 @@ function Histogram({ height }) {
       prevCoordinates.current.bbox !== bbox
     );
 
-    const layerChanged = prevLayerId.current !== mapLayer[mapLayer.length - 1]?.id;
+    // Compare against the layer the plotter is showing, NOT the last layer
+    // added to the workbench — with several accordions open those differ.
+    const layerChanged = prevLayerId.current !== currentId;
 
     if (coordinatesChanged || layerChanged) {
       loadAllData();
     }
-  }, [x, y, sizex, sizey, bbox, mapLayer, datasetsConfig]);
+  }, [x, y, sizex, sizey, bbox, currentId, datasetsConfig]);
 
   const getChartOptions = () => {
     const isDarkMode = typeof document !== 'undefined' && document.body.classList.contains('dark-mode');

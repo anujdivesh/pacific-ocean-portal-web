@@ -176,10 +176,10 @@ const MyWorkbench = () => {
     if (initialLoadDone.current && mapLayer.length > 0) {
       const lastLayer = mapLayer[mapLayer.length - 1];
 
-      if (lastLayer.id !== lastAddedId) {
+      if (String(lastLayer.id) !== String(lastAddedId)) {
         setLastAddedId(lastLayer.id);
         // Open the accordion for the newly added layer
-        setOpenAccordions(new Set([lastLayer.id]));
+        setOpenAccordions(new Set([String(lastLayer.id)]));
       }
     }
   }, [mapLayer, lastAddedId]);
@@ -204,7 +204,7 @@ const MyWorkbench = () => {
         }
       }
 
-      setOpenAccordions(new Set(targetId ? [targetId] : []));
+      setOpenAccordions(new Set(targetId !== null && targetId !== undefined ? [String(targetId)] : []));
       console.log('Restored from share. Expanding only layer:', targetId);
       setIsRestoringFromShare(false); // reset flag
     }
@@ -221,21 +221,28 @@ const MyWorkbench = () => {
     setOpenAccordions(newOpenAccordions);
   };
 
-  const removeLayerById = (eventKey) => {
-    const idNum = Number(eventKey);
+  // Takes the layer's own id (not a coerced event key) so string ids coming
+  // back from localStorage / share links still match.
+  const removeLayerById = (layerId) => {
+    const key = String(layerId);
     // Remove from Redux state (map and workbench)
-    try { dispatch(removeMapLayer({ id: idNum })); } catch {}
+    try { dispatch(removeMapLayer({ id: layerId })); } catch {}
     // Update persisted savedLayers
     try {
       const saved = localStorage.getItem('savedLayers');
       if (saved) {
-        const arr = JSON.parse(saved).filter((l) => Number(l.id) !== idNum);
+        const arr = JSON.parse(saved).filter((l) => String(l.id) !== key);
         localStorage.setItem('savedLayers', JSON.stringify(arr));
       }
     } catch {}
+    // If the plotter is showing this layer, close it — otherwise the offcanvas
+    // is left pointing at an id that no longer exists.
+    if (currentId !== null && currentId !== undefined && String(currentId) === key) {
+      dispatch(hideoffCanvas());
+    }
     // Collapse if currently open
     const newOpenAccordions = new Set(openAccordions);
-    newOpenAccordions.delete(idNum);
+    newOpenAccordions.delete(key);
     setOpenAccordions(newOpenAccordions);
   };
 
@@ -376,27 +383,31 @@ const MyWorkbench = () => {
           </div>
           <hr style={{ marginTop: -10, marginRight: -10, marginLeft: -12 }} />
           {mapLayer.map((item, index) => {
-            const isOpen = openAccordions.has(item.id);
+            // Accordion keys are always strings: react-bootstrap event keys,
+            // the open-accordion Set and the layer ids must agree, or a layer
+            // whose id came back as a string opens/closes the wrong panel.
+            const accordionKey = String(item.id);
+            const isOpen = openAccordions.has(accordionKey);
             var layer_Type = item.layer_information.layer_type;
             layer_Type = layer_Type.replace("_FORECAST", "");
 
             if (layer_Type === 'WMS' || layer_Type === 'WMS_UGRID' || layer_Type === 'WMS_HINDCAST') {
               console.log(item)
               return (
-                <Accordion key={`${item.id}-${index}`} activeKey={isOpen ? item.id : null} style={{ paddingBottom: 4, border:0 }}>
+                <Accordion key={`${item.id}-${index}`} activeKey={isOpen ? accordionKey : null} style={{ paddingBottom: 4, border:0 }}>
                   <Card>
                     <Card.Header>
                       <CheckBox item={item} />
                       <CustomToggle
-                        eventKey={item.id}
+                        eventKey={accordionKey}
                         isOpen={isOpen}
                         onToggle={handleToggle}
-                        onClose={removeLayerById}
+                        onClose={() => removeLayerById(item.id)}
                       >
                         {item.layer_information.layer_title}
                       </CustomToggle>
                     </Card.Header>
-                    <Accordion.Collapse eventKey={item.id}>
+                    <Accordion.Collapse eventKey={accordionKey}>
                       <Card.Body style={{ paddingLeft: 0, paddingRight: 0 }}>
                         <ButtonGroupComp item={item} />
                         <Opacity item={item} id={item.id} />
@@ -419,21 +430,21 @@ const MyWorkbench = () => {
               );
             } else if (item.layer_information.layer_type === 'SOFAR') {
               return (
-                <Accordion key={`${item.id}-${index}`} activeKey={isOpen ? item.id : null} style={{ paddingBottom: 4 }}>
+                <Accordion key={`${item.id}-${index}`} activeKey={isOpen ? accordionKey : null} style={{ paddingBottom: 4 }}>
                   <Card>
 
                     <Card.Header>
                       <CheckBox item={item} />
                       <CustomToggle
-                        eventKey={item.id}
+                        eventKey={accordionKey}
                         isOpen={isOpen}
                         onToggle={handleToggle}
-                        onClose={removeLayerById}
+                        onClose={() => removeLayerById(item.id)}
                       >
                         {item.layer_information.layer_title}
                       </CustomToggle>
                     </Card.Header>
-                    <Accordion.Collapse eventKey={item.id}>
+                    <Accordion.Collapse eventKey={accordionKey}>
                       <Card.Body style={{ paddingLeft: 0, paddingRight: 0 }}>
                         <ButtonGroupComp item={item} />
                         <SofarTypeFilter item={item} />
@@ -444,20 +455,20 @@ const MyWorkbench = () => {
               );
             } else if (item.layer_information.layer_type === 'TIDE') {
               return (
-                <Accordion key={`${item.id}-${index}`} activeKey={isOpen ? item.id : null} style={{ paddingBottom: 4 }}>
+                <Accordion key={`${item.id}-${index}`} activeKey={isOpen ? accordionKey : null} style={{ paddingBottom: 4 }}>
                   <Card>
                     <Card.Header>
                       <CheckBox item={item} />
                       <CustomToggle
-                        eventKey={item.id}
+                        eventKey={accordionKey}
                         isOpen={isOpen}
                         onToggle={handleToggle}
-                        onClose={removeLayerById}
+                        onClose={() => removeLayerById(item.id)}
                       >
                         {item.layer_information.layer_title}
                       </CustomToggle>
                     </Card.Header>
-                    <Accordion.Collapse eventKey={item.id}>
+                    <Accordion.Collapse eventKey={accordionKey}>
                       <Card.Body style={{ paddingLeft: 0, paddingRight: 0 }}>
                         <ButtonGroupComp item={item} />
                       </Card.Body>
@@ -467,20 +478,20 @@ const MyWorkbench = () => {
               );
             } else {
               return (
-                <Accordion key={`${item.id}-${index}`} activeKey={isOpen ? item.id : null} style={{ paddingBottom: 4 }}>
+                <Accordion key={`${item.id}-${index}`} activeKey={isOpen ? accordionKey : null} style={{ paddingBottom: 4 }}>
                   <Card>
                     <Card.Header>
                       <CheckBox item={item} />
                       <CustomToggle
-                        eventKey={item.id}
+                        eventKey={accordionKey}
                         isOpen={isOpen}
                         onToggle={handleToggle}
-                        onClose={removeLayerById}
+                        onClose={() => removeLayerById(item.id)}
                       >
                         {item.layer_information.layer_title}
                       </CustomToggle>
                     </Card.Header>
-                    <Accordion.Collapse eventKey={item.id}>
+                    <Accordion.Collapse eventKey={accordionKey}>
                       <Card.Body style={{ paddingLeft: 0, paddingRight: 0 }}>
                         <ButtonGroupComp item={item} />
                         <DateSelector

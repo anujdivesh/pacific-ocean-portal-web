@@ -6,6 +6,7 @@ import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { get_url } from './urls';
 import { withBasePath } from '@/app/lib/basePath';
 import { saveAs } from 'file-saver';
+import { getLayerById } from './helper';
 
 
 function DynamicImage({ height }) {
@@ -54,29 +55,23 @@ function DynamicImage({ height }) {
 
   const savedRegion = localStorage.getItem('selectedRegion');
 
-  function getLayerById(layersArray, id) {
-    for (let i = 0; i < layersArray.length; i++) {
-      const layer = layersArray[i];
-     
-      if (layer.id === id || (layer.layer_information && layer.layer_information.id === id)) {
-        return layer;
-      }
-    }
-    return undefined; // Return undefined if not found
-  }
   useEffect(() => {
     if (mapLayer.length > 0) {
       // console.log("mapLayer: " + JSON.stringify(mapLayer));
       // console.log("currentId: " + JSON.stringify(currentId));
-      var selected_layer = getLayerById(mapLayer, currentId);
+      const selected_layer = getLayerById(mapLayer, currentId);
 
       // console.log("selected_layer: " + JSON.stringify(selected_layer));
-      // Add null check for selected_layer
+      // The plotter's layer is gone (removed while open). Clear the frames so
+      // the previous layer's imagery is not left on screen.
       if (!selected_layer || !selected_layer.layer_information) {
         console.error(`No layer found with id: ${currentId}`);
+        setImages([]);
+        setTimestamps([]);
+        setEnabledMap(false);
         return;
       }
-      
+
       const layerInformation = selected_layer.layer_information;
       var unit_conversion = layerInformation.unit_conversion;
       setUnitConversionEnabled(!!unit_conversion);

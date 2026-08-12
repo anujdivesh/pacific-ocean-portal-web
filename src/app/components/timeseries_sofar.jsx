@@ -7,6 +7,7 @@ import { useAppSelector } from '@/app/GlobalRedux/hooks';
 import Lottie from "lottie-react";
 import animationData from "./lottie/live.json";
 import { get_url } from './urls';
+import { getLayerById } from './helper';
 import './timeseries_sofar_mobile.css';
 
 //const Line = lazy(() => import('react-chartjs-2').then((mod) => ({ default: mod.Line })));
@@ -30,6 +31,7 @@ function TimeseriesSofar({ height, data }) {
     const [chartType, setChartType] = useState('line');
   const mainTextColor = isDarkMode ? '#fff' : '#181c20';
   const mapLayer = useAppSelector((state) => state.mapbox.layers);
+  const currentId = useAppSelector((state) => state.offcanvas.currentId);
   const lastlayer = useRef(0);
   const { x, y, sizex, sizey, bbox, station, country_code, display_name } = data || {};
 
@@ -414,10 +416,11 @@ function TimeseriesSofar({ height, data }) {
     //   dataLimit
     // });
     
-    const layerInformation = mapLayer[mapLayer.length - 1]?.layer_information;
+    // The layer the plotter was opened for, not whichever layer was added last.
+    const layerInformation = getLayerById(mapLayer, currentId)?.layer_information;
     if (country_code !== "PACIOOS"){
-    
-    if (isCoordinatesValid && mapLayer.length > 0) {
+
+    if (isCoordinatesValid && layerInformation) {
       // Prevent duplicate calls by checking if same URL was called recently (within 1 second)
       var token = getValueByKey(x);
       let waveDataUrl = generateWaveDataUrl(station, token);
@@ -491,14 +494,15 @@ function TimeseriesSofar({ height, data }) {
       };
     }
   }
-  }, [isCoordinatesValid, enabledChart, mapLayer, station, country_code, liveMode, isActive, dataLimit]); // Removed applied date/time from dependencies
+  }, [isCoordinatesValid, enabledChart, mapLayer, currentId, station, country_code, liveMode, isActive, dataLimit]); // Removed applied date/time from dependencies
 
   // Separate effect that only runs when user clicks Apply (when applied dates change)
   useEffect(() => {
-    const layerInformation = mapLayer[mapLayer.length - 1]?.layer_information;
+    // The layer the plotter was opened for, not whichever layer was added last.
+    const layerInformation = getLayerById(mapLayer, currentId)?.layer_information;
     if (country_code !== "PACIOOS"){
-    
-    if (isCoordinatesValid && mapLayer.length > 0 && appliedStartDate && appliedEndDate) {      
+
+    if (isCoordinatesValid && layerInformation && appliedStartDate && appliedEndDate) {
       if (refreshIntervalRef.current) {
         clearInterval(refreshIntervalRef.current);
         refreshIntervalRef.current = null;
@@ -570,7 +574,7 @@ function TimeseriesSofar({ height, data }) {
       };
       }
     }
-  }, [appliedStartDate, appliedStartTime, appliedEndDate, appliedEndTime, isCoordinatesValid, mapLayer, station, country_code, liveMode, isActive]);
+  }, [appliedStartDate, appliedStartTime, appliedEndDate, appliedEndTime, isCoordinatesValid, mapLayer, currentId, station, country_code, liveMode, isActive]);
 
   // MutationObserver to detect theme changes
 useEffect(() => {

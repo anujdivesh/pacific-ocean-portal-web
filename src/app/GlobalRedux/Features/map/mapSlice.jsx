@@ -98,14 +98,17 @@ const mapSlice = createSlice({
       state.enable_eez = action.payload; // Add new layer to state
     },
     addMapLayer(state, action) {
-        // Prevent duplicate layers by id
-        const exists = state.layers.some(layer => layer.id === action.payload.id);
+        // Prevent duplicate layers by id. Ids round-trip through localStorage
+        // and share links as strings, so compare loosely — a numeric/string
+        // pair would otherwise create two accordions sharing one id, and any
+        // lookup by that id would resolve to whichever came first.
+        const exists = state.layers.some(layer => String(layer.id) === String(action.payload.id));
         if (!exists) {
             state.layers.push(action.payload); // Add new layer to state
         }
       },
     removeMapLayer(state, action) {
-        state.layers = state.layers.filter(layer => layer.id !== action.payload.id); // Remove layer by id
+        state.layers = state.layers.filter(layer => String(layer.id) !== String(action.payload.id)); // Remove layer by id
     },
     removeAllMapLayer: (state) => {
       state.layers = []; // Clears all layers
@@ -116,8 +119,9 @@ const mapSlice = createSlice({
       const seenIds = new Set();
       
       state.layers.forEach(layer => {
-        if (!seenIds.has(layer.id)) {
-          seenIds.add(layer.id);
+        const key = String(layer.id);
+        if (!seenIds.has(key)) {
+          seenIds.add(key);
           uniqueLayers.push(layer);
         }
       });
@@ -133,8 +137,8 @@ const mapSlice = createSlice({
     updateMapLayer(state, action) {
       const { id, updates } = action.payload;
       // Produce a brand-new array reference so selectors depending on `layers` re-run
-      state.layers = state.layers.map(layer => 
-        layer.id === id ? { ...layer, ...updates } : layer
+      state.layers = state.layers.map(layer =>
+        String(layer.id) === String(id) ? { ...layer, ...updates } : layer
       );
     },
     handleStationSearchKeyDown(state, action) {

@@ -2,24 +2,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useAppSelector } from '@/app/GlobalRedux/hooks';
 import { withBasePath } from '@/app/lib/basePath';
+import { getLayerById } from './helper';
 
 function Download({ height }) {
   const mapLayer = useAppSelector((state) => state.mapbox.layers);
   const lastlayer = useRef('');
   const currentId = useAppSelector((state) => state.offcanvas.currentId);
   const [copied, setCopied] = useState(false);
-
-  function getLayerById(layersArray, id) {
-    if (!layersArray || !id) return undefined;
-    
-    for (let i = 0; i < layersArray.length; i++) {
-      const layer = layersArray[i];     
-      if (layer.id === id || (layer.layer_information && layer.layer_information.id === id)) {
-        return layer;
-      }
-    }
-    return undefined; // Return undefined if not found
-  }
 
   // Effect to handle coordinate updates and API requests only when valid coordinates are present
   useEffect(() => {

@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import Offcanvas from 'react-bootstrap/Offcanvas';
 import { hideoffCanvas, setSelectedTab } from '@/app/GlobalRedux/Features/offcanvas/offcanvasSlice';
 import { useAppDispatch, useAppSelector } from '@/app/GlobalRedux/hooks';
@@ -19,6 +19,7 @@ import ShareWorkbench from './shareWorkbench';
 import { FaShare } from 'react-icons/fa';
 import GetMapIcon from './GetMapIcon';
 import { withBasePath } from '@/app/lib/basePath';
+import { getLayerById, sameId } from './helper';
 
 // Custom tab styles
 const customTabStyles = `
@@ -148,29 +149,33 @@ function BottomOffCanvas({ isVisible, id }) {
   const currentId = useAppSelector((state) => state.offcanvas.currentId);
   const mapLayer = useAppSelector((state) => state.mapbox.layers);
   const coordinates = useAppSelector((state) => state.coordinate.coordinates);
-  const currentCoordinates = currentId ? coordinates[currentId] : null;
-  const [layerType, setLayerType] = useState('');
-  const [layerInfo, setLayerInfo] = useState(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const globalSelectedTab = useAppSelector((state) => state.offcanvas.selectedTabKey);
-  
-  useEffect(() => {
-    if (currentId === id) {
-      const selectedLayer = mapLayer.find(layer => 
-        layer.id === currentId ||  
-        (layer.layer_information && layer.layer_information.id === currentId)
-      );
-      
-      if (selectedLayer && selectedLayer.layer_information) {
-        let layer_type = selectedLayer.layer_information.layer_type;
-        layer_type = layer_type.replace("_FORECAST", "");
-        layer_type = layer_type.replace("_UGRID", "");
-        layer_type = layer_type.replace("_HINDCAST", "");
-        setLayerType(layer_type);
-        setLayerInfo(selectedLayer.layer_information);
-      }
-    }
-  }, [mapLayer, currentId, id]);
+
+  // The id the plotter was opened with. Falling back to the store keeps this
+  // working if the component is ever rendered without the prop, but the two are
+  // always the same value in practice.
+  const layerId = id !== null && id !== undefined ? id : currentId;
+
+  // Station coordinates are strictly per layer: never borrow another layer's
+  // marker click. (Gridded layers resolve base map clicks themselves.)
+  const currentCoordinates = layerId !== null && layerId !== undefined ? coordinates[layerId] || null : null;
+
+  // Derived, not stored: keeping these in state meant a layer that was removed
+  // (or an id that resolves to nothing) left the PREVIOUS layer's tabs and data
+  // on screen. Deriving guarantees the panel matches `layerId` or shows nothing.
+  const layerInfo = useMemo(() => {
+    const selectedLayer = getLayerById(mapLayer, layerId);
+    return selectedLayer && selectedLayer.layer_information ? selectedLayer.layer_information : null;
+  }, [mapLayer, layerId]);
+
+  const layerType = useMemo(() => {
+    if (!layerInfo || typeof layerInfo.layer_type !== 'string') return '';
+    return layerInfo.layer_type
+      .replace("_FORECAST", "")
+      .replace("_UGRID", "")
+      .replace("_HINDCAST", "");
+  }, [layerInfo]);
 
   const data = {
     labels: ['January', 'February', 'March', 'April', 'May'],
@@ -326,8 +331,8 @@ function BottomOffCanvas({ isVisible, id }) {
         return (
           <Tabs activeKey={selectedTab} onSelect={handleTabSelect} id="offcanvas-tabs" className="mb-3 custom-bottom-tabs">
             <Tab eventKey="tab4" title="Timeseries">
-              {/* Force remount on station or currentId change */}
-              <TimeseriesSofar key={currentId || (currentCoordinates && currentCoordinates.station) || 'sofar'} height={height - 100} data={currentCoordinates} /> 
+              {/* Force remount on station or layer change */}
+              <TimeseriesSofar key={layerId || (currentCoordinates && currentCoordinates.station) || 'sofar'} height={height - 100} data={currentCoordinates} />
             </Tab>
           </Tabs>
         );
@@ -342,6 +347,15 @@ function BottomOffCanvas({ isVisible, id }) {
         );
       
       default:
+        // No layer resolved for this id (e.g. it was removed while the panel
+        // was open). Say so rather than leaving stale content behind.
+        if (!layerInfo) {
+          return (
+            <div style={{ padding: '20px', fontSize: 14, opacity: 0.8 }}>
+              This dataset is no longer in the workbench. Open the plotter from a layer to view its data.
+            </div>
+          );
+        }
         return null;
     }
   };

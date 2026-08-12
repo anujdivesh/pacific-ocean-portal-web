@@ -13,6 +13,7 @@ import { showoffCanvas } from '@/app/GlobalRedux/Features/offcanvas/offcanvasSli
 import ShareWorkbench from './shareWorkbench';
 import Loading from '@/app/loading';
 import { setCoordinates } from '@/app/GlobalRedux/Features/coordinate/mapSlice';
+import { MAP_CLICK_COORD_ID } from './helper';
 
 const MapBox = () => {
   const mapRef = useRef();
@@ -551,7 +552,10 @@ const MapBox = () => {
       const sizey = canvas.clientHeight;
       const b = map.getBounds();
       const bbox = `${b.getWest()},${b.getSouth()},${b.getEast()},${b.getNorth()}`;
-      dispatch(setCoordinates({ id: 2, x, y, sizex, sizey, bbox, station: null }));
+      // Base map clicks are not tied to a layer — store them under the shared
+      // sentinel key so they can never overwrite the station coordinates of a
+      // layer that happens to have the same id.
+      dispatch(setCoordinates({ id: MAP_CLICK_COORD_ID, x, y, sizex, sizey, bbox, station: null }));
     } catch (error) {
       console.error('Error handling map click:', error);
     }

@@ -177,10 +177,15 @@ export const restoreWorkbenchState = async (workbenchState, dispatch) => {
       }
     }
 
-    // Restore coordinates state (selected marker)
+    // Restore coordinates state (selected marker).
+    // setCoordinates takes ONE entry ({ id, ...coords }); handing it the whole
+    // map silently restored nothing, which left the plotter with no position
+    // for the shared layer.
     if (workbenchState.coordinates) {
       console.log(`Restoring coordinates:`, workbenchState.coordinates);
-      dispatch(coordinateSlice.setCoordinates(workbenchState.coordinates));
+      Object.entries(workbenchState.coordinates).forEach(([id, coords]) => {
+        dispatch(coordinateSlice.setCoordinates({ id, ...coords }));
+      });
     }
 
     // Restore offcanvas state

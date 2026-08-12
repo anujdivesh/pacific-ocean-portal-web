@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAppSelector } from '@/app/GlobalRedux/hooks';
 import { Spinner } from 'react-bootstrap';
+import { getLayerById, getCoordinatesForLayer } from './helper';
 
 // Jet colormap: returns rgb string for value in [0, 1]
 function jetColor(value, min = 0, max = 4) {
@@ -151,18 +152,10 @@ const formatSmart = (value, decimalPlaces) => {
 function Tabular({ height }) {
   const mapLayer = useAppSelector((state) => state.mapbox.layers);
   const currentId = useAppSelector((state) => state.offcanvas.currentId);
+  // Coordinates for THIS layer only (its own station click, otherwise the
+  // shared base map click). Never fall back to another layer's coordinates.
   const allCoordinates = useAppSelector((state) => state.coordinate.coordinates);
-  let coordinates = allCoordinates[currentId];
-  if (!coordinates) {
-    // Fallback: use first available coordinates if currentId is missing
-    const keys = Object.keys(allCoordinates);
-    if (keys.length > 0) {
-      coordinates = allCoordinates[keys[0]];
-      console.warn('Tablular.jsx fallback to first available coordinates:', coordinates);
-    } else {
-      coordinates = {};
-    }
-  }
+  const coordinates = getCoordinatesForLayer(allCoordinates, currentId) || {};
   const { x, y, sizex, sizey, bbox, station } = coordinates;
   const isCoordinatesValid = [x, y, sizex, sizey, bbox].every(v => v !== null && v !== undefined && v !== '');
   const [data, setData] = useState([]);
@@ -172,6 +165,8 @@ function Tabular({ height }) {
   const [datasetsConfig, setDatasetsConfig] = useState([]);
   const [selectedDatasets, setSelectedDatasets] = useState({});
   const lastlayer = useRef(0);
+  // Monotonic id for in-flight fetch batches; only the newest may update state.
+  const requestSeq = useRef(0);
   
 
   // HOVER STATE for (rowIdx, colIdx)
@@ -274,22 +269,19 @@ function Tabular({ height }) {
     }));
   };
 
-  function getLayerById(layersArray, id) {
-    for (let i = 0; i < layersArray.length; i++) {
-      if (layersArray[i].id === id) {
-        return layersArray[i];
-      }
-    }
-    return undefined;
-  }
-
   useEffect(() => {
     if (isCoordinatesValid && mapLayer.length > 0) {
-      let selected_layer = getLayerById(mapLayer, currentId);
+      const selected_layer = getLayerById(mapLayer, currentId);
       if (!selected_layer) {
-        // Fallback: use first available layer if currentId not found
-        selected_layer = mapLayer[0];
-        console.warn('Tablular.jsx fallback to first available layer:', selected_layer);
+        // The plotter's layer is gone (removed while open). Show nothing rather
+        // than tabulating some other layer's variables.
+        lastlayer.current = 0;
+        setDatasetsConfig([]);
+        setSelectedDatasets({});
+        setData([]);
+        setRawValuesMap({});
+        setEnabledTable(false);
+        return;
       }
       lastlayer.current = selected_layer;
       const layerInformation = selected_layer.layer_information;
@@ -346,18 +338,26 @@ function Tabular({ height }) {
     }
   }, [mapLayer, isCoordinatesValid, currentId]);
 
+  // Rows are merged in by variable name, so a response that arrives after the
+  // user switched layers would blend two datasets into one table. Tag every
+  // batch and drop results from superseded batches.
   useEffect(() => {
     if (isCoordinatesValid) {
+      const requestId = ++requestSeq.current;
+      const guardedSetTableData = (times, values, label, variable) => {
+        if (requestId !== requestSeq.current) return; // superseded
+        setTableData(times, values, label, variable);
+      };
       datasetsConfig.forEach((dataset) => {
         if (selectedDatasets[dataset.key]) {
-          fetchData(dataset.timerange, dataset.query_url, dataset.layer, dataset.label, setTableData, dataset.key);
+          fetchData(dataset.timerange, dataset.query_url, dataset.layer, dataset.label, guardedSetTableData, dataset.key);
         } else {
           setData((prevData) => prevData.filter((item) => item.variable !== dataset.key));
         }
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDatasets, datasetsConfig, x, y, isCoordinatesValid]);
+  }, [selectedDatasets, datasetsConfig, x, y, isCoordinatesValid, currentId]);
 
   const handleCheckboxChange = (datasetKey) => {
     setSelectedDatasets((prevState) => ({
