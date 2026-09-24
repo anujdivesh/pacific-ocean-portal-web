@@ -22,7 +22,74 @@ const fixedColors = [
 ];
 
 const getColorByIndex = (index) => {
-  return fixedColors[index] || 'rgb(169, 169, 169)'; 
+  return fixedColors[index] || 'rgb(169, 169, 169)';
+};
+
+// Robust timestamp parse: try ISO-8601 first, then fallback to "DD-MM-YYTHH:MM"
+const parseTimestamp = (str) => {
+  const iso = Date.parse(str);
+  if (!isNaN(iso)) return iso;
+  try {
+    const [datePart, timePartRaw] = str.split('T');
+    if (!datePart || !timePartRaw) return NaN;
+    const [day, month, year] = datePart.split('-');
+    const [hour, minute] = timePartRaw.split(':');
+    const fullYear = (year && year.length === 2) ? `20${year}` : year;
+    return Date.UTC(
+      parseInt(fullYear, 10),
+      parseInt(month, 10) - 1,
+      parseInt(day, 10),
+      parseInt(hour, 10),
+      parseInt(minute, 10)
+    );
+  } catch {
+    return NaN;
+  }
+};
+
+const GAP_FACTOR = 1.5;          // a gap is any interval > 1.5x the nominal step
+const MAX_FILLED_POINTS = 2000;  // cap on inserted placeholders to keep the chart light
+
+// Detect the nominal sampling step (median interval) and insert null placeholders
+// at each missing step, so the category x-axis shows gaps where data is missing.
+// Expects times sorted ascending.
+const fillTimeGaps = (times, datasets) => {
+  const ms = times.map(parseTimestamp);
+  const diffs = [];
+  for (let i = 1; i < ms.length; i++) {
+    const d = ms[i] - ms[i - 1];
+    if (!isNaN(d) && d > 0) diffs.push(d);
+  }
+  if (diffs.length === 0) return { times, datasets };
+
+  diffs.sort((a, b) => a - b);
+  const step = diffs[Math.floor(diffs.length / 2)];
+
+  const outTimes = [times[0]];
+  const outValues = datasets.map(ds => [ds.values[0]]);
+  let budget = MAX_FILLED_POINTS;
+
+  for (let i = 1; i < times.length; i++) {
+    const gap = ms[i] - ms[i - 1];
+    if (!isNaN(gap) && gap > step * GAP_FACTOR) {
+      const missing = Math.round(gap / step) - 1;
+      // Fill every missing step if within budget, otherwise insert a single break
+      const slots = missing <= budget ? missing : 1;
+      const slotStep = gap / (slots + 1);
+      for (let k = 1; k <= slots; k++) {
+        outTimes.push(new Date(ms[i - 1] + slotStep * k).toISOString().slice(0, 16) + 'Z');
+        outValues.forEach(vals => vals.push(null));
+      }
+      budget -= slots;
+    }
+    outTimes.push(times[i]);
+    outValues.forEach((vals, j) => vals.push(datasets[j].values[i]));
+  }
+
+  return {
+    times: outTimes,
+    datasets: datasets.map((ds, j) => ({ ...ds, values: outValues[j] })),
+  };
 };
 
 function TimeseriesSofar({ height, data }) {
@@ -313,27 +380,6 @@ function TimeseriesSofar({ height, data }) {
   const setChartDataFn = (times, datasets) => {
     const indices = times.map((t, i) => i);
     indices.sort((a, b) => {
-      // Robust timestamp parse: try ISO-8601 first, then fallback to "DD-MM-YYTHH:MM"
-      const parseTimestamp = (str) => {
-        const iso = Date.parse(str);
-        if (!isNaN(iso)) return iso;
-        try {
-          const [datePart, timePartRaw] = str.split('T');
-          if (!datePart || !timePartRaw) return NaN;
-          const [day, month, year] = datePart.split('-');
-          const [hour, minute] = timePartRaw.split(':');
-          const fullYear = (year && year.length === 2) ? `20${year}` : year;
-          return Date.UTC(
-            parseInt(fullYear, 10),
-            parseInt(month, 10) - 1,
-            parseInt(day, 10),
-            parseInt(hour, 10),
-            parseInt(minute, 10)
-          );
-        } catch {
-          return NaN;
-        }
-      };
       const ta = parseTimestamp(times[a]);
       const tb = parseTimestamp(times[b]);
       if (isNaN(ta) && isNaN(tb)) return 0;
@@ -347,10 +393,12 @@ function TimeseriesSofar({ height, data }) {
       ...ds,
       values: indices.map(i => ds.values[i])
     }));
-    
+
+    const { times: filledTimes, datasets: filledDatasets } = fillTimeGaps(sortedTimes, sortedDatasets);
+
     setChartData({
-      labels: sortedTimes,
-      datasets: sortedDatasets.map((dataset, index) => {
+      labels: filledTimes,
+      datasets: filledDatasets.map((dataset, index) => {
         // Filter out -999 values by replacing them with null to create gaps
         const filteredValues = dataset.values.map(value => {
           // Check for -999 or similar missing data indicators
