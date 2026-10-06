@@ -17,6 +17,8 @@
         return server+'/middleware/api/theme/?format=json';
       case 'country':
         return server+'/middleware/api/country/?format=json';
+      case 'notice':
+        return server+'/middleware/api/notice/?format=json&is_notice_enabled=true';
       case 'getLegend':
         return 'https://ocean-cgi.spc.int/cgi-bin/getLegend.py?units=null&layer_map='+id+'&coral=False';
       case 'tailored_menu':

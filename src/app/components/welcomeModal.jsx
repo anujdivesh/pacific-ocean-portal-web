@@ -5,6 +5,7 @@ import { Modal, Button,Form } from 'react-bootstrap';
 import { useDispatch } from 'react-redux';
 import { setBaseMapLayer } from '@/app/GlobalRedux/Features/map/mapSlice';
 import { withBasePath } from '@/app/lib/basePath';
+import { get_url } from '@/app/components/urls';
 const basemapOptions = [
   {
     key: "osm",
@@ -71,6 +72,29 @@ const WelcomeModal = () => {
   const [show, setShow] = useState(false);
   const [timesShown, setTimesShown] = useState(0);
   const [isChecked, setIsChecked] = useState(true);
+  const [notices, setNotices] = useState([]);
+  const [activeTab, setActiveTab] = useState('home');
+  const [greeting] = useState(() => randomGreeting());
+
+  // Fetch enabled notices; if any exist, always show the modal
+  useEffect(() => {
+    let cancelled = false;
+    fetch(get_url('notice'))
+      .then(res => (res.ok ? res.json() : []))
+      .then(data => {
+        if (cancelled) return;
+        const items = Array.isArray(data) ? data.filter(n => n.is_notice_enabled) : [];
+        setNotices(items);
+        if (items.length > 0) {
+          setActiveTab(items[0].id);
+          setShow(true);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Basemap selector state
   const [selectedBasemap, setSelectedBasemap] = useState(() => {
@@ -94,6 +118,7 @@ const WelcomeModal = () => {
       if (storedCount) {
         const count = parseInt(storedCount, 10);
         setTimesShown(count);
+        setIsChecked(count < 500);
         if (count < 500) {
           setShow(true);
         }
@@ -128,12 +153,14 @@ const WelcomeModal = () => {
   const handleCheckboxChange = (e) => {
     const checked = e.target.checked;
     e.target.blur();
-    setIsChecked(!checked);
-    if (!checked) {
-      if (typeof window !== "undefined" && window.localStorage) {
-        localStorage.setItem("modalShownCount", 500);
-      }
-      setTimesShown(500);
+    setIsChecked(checked);
+    const newCount = checked ? 0 : 500;
+    if (typeof window !== "undefined" && window.localStorage) {
+      localStorage.setItem("modalShownCount", newCount.toString());
+    }
+    setTimesShown(newCount);
+    // Notices force the modal open, so only auto-close when there are none
+    if (!checked && notices.length === 0) {
       setShow(false);
     }
   };
@@ -154,6 +181,11 @@ const WelcomeModal = () => {
     return greetings[randomIndex];
   }
 
+  const activeNotice = notices.find(n => n.id === activeTab);
+  // API has no title flag yet; hide only if one is added and set to false
+  const showNoticeTitle = !!activeNotice && activeNotice.title_enabled !== false && !!activeNotice.title;
+  const showNoticeButton = !!activeNotice && activeNotice.url_enabled === true && !!activeNotice.url;
+
 return (
     <Modal
         show={show}
@@ -168,8 +200,70 @@ return (
             closeVariant="white"
             className="custom-welcome-modal-header"
         >
-            <Modal.Title className="custom-welcome-modal-title">{randomGreeting()}</Modal.Title>
+            <Modal.Title className="custom-welcome-modal-title">{greeting}</Modal.Title>
+            {notices.length > 0 && (
+                <div className="custom-welcome-tabs" role="tablist">
+                    <button
+                        type="button"
+                        role="tab"
+                        aria-selected={activeTab === 'home'}
+                        className={`custom-welcome-tab${activeTab === 'home' ? ' active' : ''}`}
+                        onClick={() => setActiveTab('home')}
+                    >
+                        Home
+                    </button>
+                    {notices.map(n => (
+                        <button
+                            key={n.id}
+                            type="button"
+                            role="tab"
+                            aria-selected={activeTab === n.id}
+                            className={`custom-welcome-tab notice${activeTab === n.id ? ' active' : ''}`}
+                            onClick={() => setActiveTab(n.id)}
+                        >
+                            {n.title}
+                        </button>
+                    ))}
+                </div>
+            )}
         </Modal.Header>
+        {activeNotice ? (
+        <Modal.Body className="custom-welcome-modal-body custom-notice-body">
+            {(showNoticeTitle || showNoticeButton) && (
+            <div className="custom-notice-header">
+                {showNoticeTitle && (
+                    <h4 className="custom-welcome-title custom-notice-title">{activeNotice.title}</h4>
+                )}
+                {showNoticeButton && (
+                    <a
+                        href={activeNotice.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="custom-notice-btn"
+                    >
+                        <span>View Dashboard</span>
+                        <svg className="custom-notice-btn-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <line x1="5" y1="12" x2="19" y2="12" />
+                            <polyline points="12 5 19 12 12 19" />
+                        </svg>
+                    </a>
+                )}
+            </div>
+            )}
+            {activeNotice.description_enabled === true && activeNotice.description && (
+                <p className="custom-notice-description">{activeNotice.description}</p>
+            )}
+            {activeNotice.image_enabled === true && activeNotice.image && (
+                <div className="text-center">
+                    <img
+                        src={activeNotice.image}
+                        alt={activeNotice.title}
+                        className="custom-notice-img"
+                    />
+                </div>
+            )}
+        </Modal.Body>
+        ) : (
         <Modal.Body className="custom-welcome-modal-body">
             {/* Motif watermark, bottom-right, clipped so only its right edge bleeds off */}
             <div
@@ -259,6 +353,7 @@ return (
                     </a>
              </div>
         </Modal.Body>
+        )}
         <Modal.Footer className="d-flex justify-content-between align-items-center custom-welcome-modal-footer">
             <Form.Group controlId="setModalCount" className="mb-0 d-flex align-items-center">
                 <Form.Check
@@ -320,6 +415,95 @@ return (
                 margin: 0;
             }
             html.light-mode .custom-welcome-modal-title {
+                color: #fff;
+            }
+            .custom-welcome-tabs {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 4px;
+                margin-left: 18px;
+                margin-right: auto;
+            }
+            .custom-welcome-tab {
+                background: rgba(255,255,255,0.12);
+                border: 1px solid rgba(255,255,255,0.35);
+                color: #fff;
+                font-size: 0.85rem;
+                font-weight: 500;
+                padding: 3px 12px;
+                border-radius: 0;
+                cursor: pointer;
+                transition: background 0.15s;
+            }
+            .custom-welcome-tab:hover {
+                background: rgba(255,255,255,0.25);
+            }
+            .custom-welcome-tab.active {
+                background: #fff;
+                color: #3F51B5;
+                border-color: #fff;
+            }
+            .custom-welcome-tab.notice {
+                background: rgba(249,115,22,0.35);
+                border-color: #f97316;
+                color: #fff;
+            }
+            .custom-welcome-tab.notice:hover {
+                background: rgba(249,115,22,0.6);
+            }
+            .custom-welcome-tab.notice.active {
+                background: #f97316;
+                border-color: #f97316;
+                color: #fff;
+                font-weight: 600;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+            }
+            .custom-notice-body {
+                padding-bottom: 18px;
+            }
+            .custom-notice-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                flex-wrap: wrap;
+                gap: 12px;
+                margin-bottom: 14px;
+            }
+            .custom-notice-title {
+                margin-bottom: 0;
+            }
+            .custom-notice-description {
+                text-align: center;
+                font-size: 15px;
+                color: var(--modal-text, #f1f5f9);
+                margin-bottom: 14px;
+                white-space: pre-line;
+            }
+            .custom-notice-img {
+                max-width: 100%;
+                max-height: 55vh;
+                height: auto;
+                object-fit: contain;
+                margin-bottom: 16px;
+            }
+            .custom-notice-btn {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                background: #f97316;
+                border: 1px solid #ea580c;
+                color: #fff;
+                font-size: 0.95rem;
+                font-weight: 600;
+                padding: 7px 16px;
+                border-radius: 0;
+                text-decoration: none;
+                white-space: nowrap;
+                transition: background 0.15s;
+            }
+            .custom-notice-btn:hover,
+            .custom-notice-btn:focus-visible {
+                background: #ea580c;
                 color: #fff;
             }
             .custom-welcome-modal-body {
