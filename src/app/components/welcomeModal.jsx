@@ -19,7 +19,7 @@ const basemapOptions = [
     key: "bing",
     label: "Satellite",
     img: "/basemaps/bing.png",
-    url: "https://ocean-plotter.spc.int/plotter/cache/basemap/{z}/{x}/{y}.png",
+    url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
     attribution: "© Pacific Community SPC | Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community",
     option: "bing"
   },

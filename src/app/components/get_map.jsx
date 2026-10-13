@@ -573,7 +573,7 @@ const MapBox = () => {
     } else if (value === 'bing') {
       isBing.current = true;
       basemapObj = {
-        url: 'https://ocean-plotter.spc.int/plotter/cache/basemap/{z}/{x}/{y}.png',
+        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
         attribution: '© Pacific Community SPC | Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
         maxZoom: 10, minZoom: 2, option: value,
       };
@@ -915,11 +915,16 @@ const MapBox = () => {
       // Choose initial basemap: localStorage overrides Redux if present
       let storedBaseMap = null;
       try { storedBaseMap = JSON.parse(localStorage.getItem('basemap')); } catch { storedBaseMap = null; }
+      // Old saved choice pointing at the ocean-plotter basemap cache -> use Esri directly.
+      if (storedBaseMap?.url?.includes('ocean-plotter.spc.int/plotter/cache/basemap')) {
+        storedBaseMap = { ...storedBaseMap, url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}' };
+        try { localStorage.setItem('basemap', JSON.stringify(storedBaseMap)); } catch {}
+      }
       const initialBasemap = (storedBaseMap && storedBaseMap.url) ? storedBaseMap : basemap;
       setSelectedOption(initialBasemap.option);
       selectedOptionRef.current = initialBasemap.option;
       if (storedBaseMap && storedBaseMap.url !== basemap.url) dispatch(setBaseMapLayer(storedBaseMap));
-      isBing.current = /bing|ocean-plotter\.spc\.int\/plotter\/cache\/basemap/.test(initialBasemap.url || '');
+      isBing.current = /bing|World_Imagery/.test(initialBasemap.url || '');
       setBasemap(initialBasemap);
       currentBasemapUrlRef.current = initialBasemap.url;
 
